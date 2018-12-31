@@ -14,7 +14,7 @@ require(geosphere)
 library(adehabitatHR)
 library(lubridate)
 library(raster)
-
+library(R.utils)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # DOWNLOAD DATA FROM MOVEBANK
@@ -76,14 +76,18 @@ OL1<-kerneloverlaphr(HR, meth="BA", conditional=TRUE)		### set conditional=T wil
 
 
 ### CALCULATE EARTH MOVERS DISTANCE INDEX
-#for (gr in c(100,75,50,25,20)){
-#  rm(emdout)
-#  KDE.Small <- adehabitatHR::kernelUD(TripCoords, grid=gr, same4all=T)	## REDUCED GRID TO LIMIT COMPUTATION TIME
-#  udspdf <- estUDm2spixdf(KDE.Small)
-#  all<-stack(udspdf)
-#  withTimeout({try(emdout<-emd(all, threshold=emdthresh), silent=T)}, timeout=500, onTimeout="silent")
-#  if('emdout' %in% ls()){break}
-#}
+## this is an extremely computationally intensive calculation, so reduce grid size before doing it
+
+# emdthresh<-sqrt((diff(range(coordinates(input)[,1]))^2)+(diff(range(coordinates(input)[,2]))^2))	## needed to avoid internal error 9
+# for (gr in c(100,75,50)){
+#   try(rm(emdout),silent=T)
+#   KDE.Small <- adehabitatHR::kernelUD(input, grid=gr, same4all=T)	## REDUCED GRID TO LIMIT COMPUTATION TIME
+#   udspdf <- estUDm2spixdf(KDE.Small)
+#   all<-stack(udspdf)
+#   withTimeout({try(emdout<-emd(all, threshold=emdthresh), silent=T)}, timeout=500, onTimeout="silent")
+#   if('emdout' %in% ls()){break}
+# }
+
 
 
 ### FORMAT FOR OUTPUT
