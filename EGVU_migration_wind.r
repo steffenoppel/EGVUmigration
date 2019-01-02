@@ -19,12 +19,14 @@ library(RNCEP)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # DOWNLOAD DATA FROM MOVEBANK
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-MyLOGIN <- movebankLogin(username="Steffen", password="xxxxxxxxxxxxxxxx")
+MyLOGIN <- movebankLogin(username="Steffen", password="xxxxx")
 EVlocs<-getMovebankData(study="Neophron percnopterus Bulgaria/Greece",login=MyLOGIN, removeDuplicatedTimestamps=T)
 EVanimals<-getMovebankAnimals(study="Neophron percnopterus Bulgaria/Greece",login=MyLOGIN)
 head(EVlocs)
 str(EVlocs)
 head(EVanimals)
+
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,8 +50,8 @@ migration<-data.frame()
 
 for (a in alltrips){
 
-input<-EVlocs@data[EVlocs@data$deployment_id == a,] %>% filter(sensor_type=="GPS") %>%
-  dplyr::select(deployment_id,tag_id,location_long,location_lat,timestamp) %>%
+input<-EVlocs@data[EVlocs@data$deployment_id == a,] %>% filter(sensor_type_id==653) %>%  		## used to be filter(sensor_type=="GPS")
+  dplyr::select(deployment_id,location_long,location_lat,timestamp) %>%
   arrange(timestamp) %>%
   mutate(step_dist=0,home_dist=0,cumul_dist=0,time_diff=0,speed=0,tailwind=0,sidewind=0)
 
@@ -67,7 +69,7 @@ input$speed[l]<-input$step_dist[l]/input$time_diff[l]
 ### get wind information ###
 
 fldat<-NCEP.flight(beg.loc=c(input$location_lat[l-1], input$location_long[l-1]), end.loc=c(input$location_lat[l], input$location_long[l]), begin.dt=as.character(input$timestamp[l-1]), flow.assist='NCEP.Tailwind',
-  fa.args=list(airspeed=12), path='great.circle', when2stop=list('latitude','longitude',50),cutoff=-500,
+  fa.args=list(airspeed=12), path='great.circle', when2stop=list('longitude',50),cutoff=-500,
   levels2consider='surface', hours=3, evaluation.interval=60, id=1, land.if.bad=FALSE, reanalysis2 = FALSE)
 input$tailwind[l]<-ifelse(length(fldat$tailwind[1])>0,fldat$tailwind[1],NA)
 input$sidewind[l]<-ifelse(length(fldat$sidewind[1])>0,fldat$sidewind[1],NA)
