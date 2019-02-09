@@ -35,78 +35,69 @@ data(countriesLow)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# LOAD PREVIOUSLY SAVED WORKSPACE (from 'EGVU_migration_data_prep2016.r')
+# LOAD PREVIOUSLY SAVED DATA (prepared in script 2.EV-all-migration delineation.R)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Set working directory
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_prep\\EGVU_papers\\FrontiersMigrationPaper\\EGVUmigration")
 
-setwd("C:\\STEFFEN\\RSPB\\Bulgaria\\Analysis\\Migration")
-setwd("S:\\ConSci\\DptShare\\SteffenOppel\\RSPB\\Bulgaria\\Analysis\\Migration")
-setwd("C:\\Users\\Clémentine\\Documents\\Stage M2\\EGVU_Bulgaria")
+# read in clean csv
+locs = read.csv("EV-all_1ptperhr-filtered-utm-NSD-season.csv")
+head(locs)
 
-load("C:\\STEFFEN\\RSPB\\Bulgaria\\Analysis\\Migration\\EGVU_migration_raw_dat.RData")
-load("S:\\ConSci\\DptShare\\SteffenOppel\\RSPB\\Bulgaria\\Analysis\\Migration\\EGVU_migration_raw_dat.RData")
-load("C:\\Users\\Clémentine\\Documents\\Stage M2\\EGVU_Bulgaria\\EGVU_migration_raw_dat.RData")
-
+migs<-unique(locs$id.yr.season) ## specify the unique migration journeys
+migs<-migs[!migs %in% c("Cabuk_2016_spring")]
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# DATA EXPLORATION TO VISUALISE TRAVEL: PLOT OF CUMULATIVE DISTANCE TRAVELLED
+# CALCULATE TRAVEL DISTANCES AND SPEEDS 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## this is not a particularly efficient way to calculate that, but it is easy to understand and manipulate
+## run time ~25 min
 
-par (mfrow=c(6,4), mar=c(3,4,1,0), oma=c(0,0,0,0))
-for (a in anim){
-input<-migration[migration$Bird_ID == a,]
-plottitle<-paste(a,birds$Transmitter_ID[match(a,birds$Name)], sep=" ")
-plot(cumul_dist~Date, type='l', frame=F, data=input, main=plottitle)
+migration<-data.frame()
+
+migs<-migs[!migs %in% unique(migration$id.yr.season)]     ## use this line if loop was interrupted
+for (a in migs){
+  
+  input<-locs %>% filter(id.yr.season==a) %>% 
+    mutate(DateTime=ymd_h(paste(Year,Month, Day, Hour, sep=","))) %>%
+    dplyr::select(id.yr.season,study,tag,id,DateTime, long, lat, NSD, ND,utm.e,utm.n) %>% arrange(DateTime) %>%
+    mutate(step_dist=0,home_dist=0,cumul_dist=0,time_diff=0,speed=0)
+  first<-SpatialPoints(data.frame(input$long[1], input$lat[1]), proj4string=CRS("+proj=longlat + datum=wgs84"))
+  
+  for (l in 2: dim(input)[1]){
+    input$time_diff[l]<-as.numeric(difftime(input$DateTime[l],input$DateTime[l-1], units="hours"))
+    fromloc<-SpatialPoints(data.frame(input$long[l-1], input$lat[l-1]), proj4string=CRS("+proj=longlat + datum=wgs84"))
+    toloc<-SpatialPoints(data.frame(input$long[l], input$lat[l]), proj4string=CRS("+proj=longlat + datum=wgs84"))
+    input$step_dist[l]<-spDistsN1(fromloc, toloc, longlat=T)
+    input$home_dist[l]<-spDistsN1(first, toloc, longlat=T)
+    input$cumul_dist[l]<-sum(input$step_dist)
+    input$speed[l]<-input$step_dist[l]/input$time_diff[l]
+  }
+  
+  migration<-rbind(migration, input)
+  
 }
 
 
+migs<-unique(migration$id.yr.season) ## specify the unique migration journeys
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# CREATE A BLANK TABLE THAT LISTS ALL MIGRATION EVENTS FOR INDIVIDUAL ANIMALS
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-anim<-unique(birds$Name)
-mig_summary<-birds[,c(1:7,13)]
-mig_summary$season<-NA
-mig_summary$year<-0
-mig_summary$start_mig<-NA
-mig_summary$end_mig<-NA
-mig_summary$mig_days<-0
-mig_summary$mig_dist<-0
-mig_summary$mig_speed<-0
-mig_summary$mig_completed<-0
+
 
 
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# COMPILE ALL MIGRATION SEASONS DURING WHICH AN ANIMAL WAS ALIVE AND TAGGED
+# CREATE A BLANK TABLE THAT LISTS ALL MIGRATION EVENTS FOR INDIVIDUAL MIGRATION JOURNEYS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-season_summary<-data.frame()
-for (a in anim){
 
-x<-subset(migration, Bird_ID==a)
-x$year<-as.integer(format(x$Date, format="%Y"))
+mig_summary<-migration %>% mutate(count=1) %>%
+  group_by(id.yr.season,study,tag,id) %>%
+  summarise(N_locs=sum(count)) %>%
+  mutate(start_mig=NA,end_mig=NA,mig_days=0,mig_dist=0,mig_speed=0,mig_completed=0)
 
-for(y in unique(x$year)){
 
-xy<-subset(x, year==y)
-seasonbird<-mig_summary[mig_summary$Name==a,]
-seasonbird$year<-y
-if(min(xy$Date)<as.POSIXct(sprintf("%s-02-01",y),format="%Y-%m-%d")){
-if(max(xy$Date)>as.POSIXct(sprintf("%s-03-30",y),format="%Y-%m-%d")){
-
-seasonbird$season<-"spring"
-season_summary<-rbind(season_summary,seasonbird)}}
-
-if(max(xy$Date)>as.POSIXct(sprintf("%s-11-20",y),format="%Y-%m-%d")){
-seasonbird$season<-"autumn"
-season_summary<-rbind(season_summary,seasonbird)}
-}
-}
-
-#season_summary[season_summary$Name=="Lazaros",]
 
 
 
@@ -116,118 +107,73 @@ season_summary<-rbind(season_summary,seasonbird)}
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### LOOP TO CALCULATE START AND END DATES FOR AUTUMN MIGRATION #######
+### based on Evan's script to use models, but if model fails we use basic rules of thumb
+
+
+
 ### This loop extracts all locations associated with migration from the corrected location data set and compiles them in a new blank data frame for use in further analysis
 ### changed on 9 Feb 2016 to exclude immature birds - they are too complicated and must be added manually
 
 all_migdata<-data.frame()		### create blank data frame that will hold all the data associated with proper autumn migration
 
-for (a in anim){
-x<-subset(migration, Bird_ID==a)
-x$year<-as.integer(format(x$Date, format="%Y"))
+for (a in migs){
+  x<-migration %>% filter(id.yr.season==a)
+  
+  
+  ### create LTRAJ object to fit movement model
+  d2 <- as.ltraj(xy = x[, c("utm.e", "utm.n")], date = x$DateTime, id=a)
+  d3 <- mvmtClass(d2)
+  migr.dates <-  mvmt2dt(d3, p = 0.01, mod = "disperser")      ## replaced 0.05 with 0.01 as it includes most of the migration
+  mig_time<-interval(start=migr.dates[[1]]$date[1],end=migr.dates[[1]]$date[2])
+  
+  ### write output in summary
+  mig_summary$start_mig[mig_summary$id.yr.season==a]<- migr.dates[[1]]$date[1]
+  mig_summary$start_mig[mig_summary$id.yr.season==a]<- migr.dates[[1]]$date[2]
+  
+  
+  ### visually assess whether these dates make sense
+  x<- x %>% mutate(MIG=if_else(DateTime %within% mig_time,2,3))
+  plot(home_dist~DateTime, data=x,type='p', col=x$MIG, pch=16, cex=0.4)
+  
+  ### split data into premigration, migration, and post-migration
+  premig <- x %>% filter(DateTime < migr.dates[[1]]$date[1])
+  xmig<- x %>% filter(MIG==2)
+  postmig <- x %>% filter(DateTime > migr.dates[[1]]$date[2])
+  
+  ### calculate mean travel speed for migration and outside
+  migspeed<- x %>% mutate(Day=as.Date(DateTime)) %>% group_by(MIG,Day) %>%
+    summarise(daily_speed=mean(speed), daily_dist=sum(step_dist)) %>% group_by(MIG) %>%
+    summarise(min_mig_speed=min(daily_speed), max_mig_speed=max(daily_speed), min_daily_dist=min(daily_dist), max_daily_dist=max(daily_dist)) 
+  
+  ### calculate mean daily travel speed for migration and outside
+  dailysummary<- x %>% mutate(Day=as.Date(DateTime)) %>% group_by(Day) %>%
+    summarise(daily_speed=mean(speed), daily_dist=sum(step_dist))
+  
+  
+  ## SIMPLE THRESHOLDS - MIGRATION STARTS WHEN DIST TO HOME CONTINUOUSLY INCREASES
+  dailyhomedist<- x %>% mutate(Day=as.Date(DateTime)) %>% group_by(Day) %>%
+    summarise(away=max(home_dist))
+  
+  ### find the first day where home_dist is greater than on any day before, and where home_dist is greater on any day afterwards
+  start<-NA
+  end<-NA
+  for (d in 2:dim(dailyhomedist)[1]){
+    maxbef<-max(dailyhomedist$away[1:(d-1)])
+    minaft<-min(dailyhomedist$away[(d+1):dim(dailyhomedist)[1]])
+    if(is.na(start)==TRUE) {     ## prevent that the first day gets overwritten by subsequent days
+      if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]<minaft){start<-dailyhomedist$Day[d]} 
+    }
+    
+    if(is.na(start)==FALSE & is.na(end)==TRUE) {     ## prevent that the end is defined before the start
+      if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]>=minaft){end<-dailyhomedist$Day[d]}
+    }
+  }  # end loop over every day in the data set
+    
+    
 
-years<-season_summary$year[season_summary$Name==a & season_summary$season == "autumn"]
-
-for (y in years){
-
-xy<-subset(x, year==y)
-xy<-xy[xy$Date>as.POSIXct(sprintf("%s-07-15",y),format="%Y-%m-%d"),]				## take only second half of year for autumn migration
-dailydist<-aggregate(step_dist~Date, data=xy, FUN=sum)						## calculate daily travel distance
-
-if(birds$Age[match(a, birds$Name)]=="juv" & birds$Tag_year[match(a, birds$Name)]==y){
-start<-as.Date(min(dailydist$Date[dailydist$step_dist>50]), format="%Y-%m-%d")+1		## migration starts for a juvenile when bird travels >50 km per day
-}
-if(birds$Age[match(a, birds$Name)]=="ad"){
-start<-as.Date(min(dailydist$Date[dailydist$step_dist>150]), format="%Y-%m-%d")+1		## migration starts for an adult when bird travels >150 km per day
-}
-
-subSahara<-xy[xy$lat<22,]
-if (dim(subSahara)[1]>0){									## calculate end of migration only for birds that crossed the Sahara
-season_summary$mig_completed[season_summary$Name==a & season_summary$season == "autumn" & season_summary$year==y]<-1
-southward<-aggregate(home_dist~Date, data=subSahara, FUN=mean)			## calculate average distance to home for each day
-southward$reversal<-0
-
-for (d in 2:dim(southward)[1]){
-southward$reversal[d]<-southward$home_dist[d]-southward$home_dist[d-1]		## calculate difference in distance to origin
-}
-end<-as.Date(min(southward$Date[southward$reversal<0], na.rm=T), format="%Y-%m-%d") ## migration ends when dist to home no longer increases after the bird is south of 22 N
-}else{end<-as.Date(max(xy$Date), format="%Y-%m-%d")
-season_summary$mig_completed[season_summary$Name==a & season_summary$season == "autumn" & season_summary$year==y]<-0}				## for birds that died on migration the migration ends when the bird is dead
-### write important dates into table ###
-season_summary$end_mig[season_summary$Name==a & season_summary$season == "autumn" & season_summary$year==y]<-as.character(end)
-
-if(format(start, format="%Y")==y){								## THIS CONDITION PREVENTS THE INCLUSION OF ODD AUTUMN MIGRATION OF IMMATURE BIRDS
-season_summary$start_mig[season_summary$Name==a & season_summary$season == "autumn" & season_summary$year==y]<-as.character(start)
-season_summary$mig_days[season_summary$Name==a & season_summary$season == "autumn" & season_summary$year==y]<-end-start
-
-migdata<-xy[as.Date(xy$Date)>=start,]
-migdata<-migdata[as.Date(migdata$Date)<=end,]
-
-if((end-start)>3){all_migdata<-rbind(all_migdata, migdata)}
-season_summary$mig_dist[season_summary$Name==a & season_summary$season == "autumn" & season_summary$year==y]<-sum(migdata$step_dist)
-season_summary$mig_speed[season_summary$Name==a & season_summary$season == "autumn" & season_summary$year==y]<-mean(migdata$speed)
-}		#closes the if statement that ensures that only current year data are used [to exclude immatures after tag_year]
-}		#closes the year loop
 }		#closes the animal loop
 
-### no longer needed corrections from earlier versions
-#season_summary<-season_summary[!(season_summary$mig_days<3 & season_summary$season == "autumn"),]		# remove non-existing migrations - keeps every line where mig_days is not <3 in autumn season
-#season_summary[season_summary$Age == "juv" & season_summary$season == "autumn" & season_summary$year>season_summary$Tag_year,13:15]<-0	# SET MIGRATION TIMES OF IMMATURES TO 0
 
-season_summary
-
-all_migdata$season<-"autumn"			## add the season to the migration data
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# CALCULATE THE MINIMUM DISTANCE TO THE NEST IN EVERY YEAR AFTER THE TAG YEAR FOR EVERY JUVENILE
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-nest_dist_juv<-data.frame()
-
-head(birds)
-juveniles<-birds[(birds$Age=="juv"),c(2,4,5,6,7)]
-juveniles<-juveniles[juveniles$Name %in% season_summary$Name,]
-
-for(j in juveniles$Name){
-x<-subset(migration, Bird_ID==j)
-x$year<-as.integer(format(x$Date, format="%Y"))
-years<-unique(x$year)
-years<-years[-1]
-for(y in years){
-
-xy<-subset(x, year==y)
-if(max(xy$DateTime)>as.POSIXct(sprintf("%s-05-30",y),format="%Y-%m-%d")){
-mindist<-xy[xy$home_dist==min(xy$home_dist,na.rm = TRUE),c(6,1,17,8:9,19)]
-mindist$year<-y
-nest_dist_juv<-rbind(nest_dist_juv,mindist[1,])
-}}}		## Close the if statement, year loop, juveniles loop
-
-write.table(nest_dist_juv, "EGVU_philopatry_distance_juv.csv", sep=";", row.names=F)
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# CALCULATE THE MINIMUM DISTANCE TO THE NEST IN EVERY YEAR FOR EVERY ADULT
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-nest_dist_ad<-data.frame()
-
-head(birds)
-adults<-birds[(birds$Age=="ad"),c(2,4,5,6,7)]
-adults<-adults[adults$Name %in% season_summary$Name,]
-
-for(a in adults$Name){
-x<-subset(migration, Bird_ID==a)
-x$year<-as.integer(format(x$Date, format="%Y"))
-years<-unique(x$year)
-for(y in years){
-
-xy<-subset(x, year==y)
-if(max(xy$DateTime)>as.POSIXct(sprintf("%s-05-30",y),format="%Y-%m-%d")){		### Which date should we set for the spring migration ?
-mindist<-xy[xy$home_dist==min(xy$home_dist,na.rm = TRUE),c(6,1,17,8:9,19)]
-mindist$year<-y
-nest_dist_ad<-rbind(nest_dist_ad,mindist)
-}}}		## Close the if statement, year loop, adults loop
-
-write.table(nest_dist_ad, "EGVU_philopatry_distance_ad.csv", sep=",", row.names=F)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -426,19 +372,4 @@ all_migdata<-all_migdata[all_migdata$MigID %in% season_summary$MigID,]
 dim(all_migdata)
 unique(all_migdata$MigID)
 
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# SAVE WORKSPACE (MIGRATORY BOTTLENECK ANALYSIS AND HOME RANGE ESTIMATION MOVED TO ANOTHER SCRIPT)
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Set working directory
-
-setwd("C:\\STEFFEN\\RSPB\\Bulgaria\\Analysis\\Migration")
-setwd("S:\\ConSci\\DptShare\\SteffenOppel\\RSPB\\Bulgaria\\Analysis\\Migration")
-setwd("C:\\Users\\Clémentine\\Documents\\Stage M2\\EGVU_Bulgaria")
-
-save.image("C:\\STEFFEN\\RSPB\\Bulgaria\\Analysis\\Migration\\EGVU_migration_Jun2016.RData")
-save.image("S:\\ConSci\\DptShare\\SteffenOppel\\RSPB\\Bulgaria\\Analysis\\Migration\\EGVU_migration_Jun2016.RData")
-save.image("C:\\Users\\Clémentine\\Documents\\Stage M2\\EGVU_Bulgaria\\EGVU_migration_Jun2016.RData")
 

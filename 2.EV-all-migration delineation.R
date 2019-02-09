@@ -1,6 +1,6 @@
 #Set WD
 setwd("~/Google Drive/Egyptian Vulture/Frontiers in Ecology & Evolution Paper/Latest/Data/EVmigration_data")
-setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_prep\\EGVU_papers\\FrontiersMigrationPaper")
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_prep\\EGVU_papers\\FrontiersMigrationPaper\\EGVUmigration")
 
 ##Clear workspace
 rm(list = ls())
