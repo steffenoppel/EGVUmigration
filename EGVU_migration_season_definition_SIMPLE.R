@@ -2,19 +2,7 @@
 # DEFINITION OF MIGRATORY SEASONS FOR SATELLITE-TRACKED EGYPTIAN VULTURES
 # original script written by Steffen Oppel in September 2014
 # modified in February 2016
-# removed all ARGOS locations
-# update 6 Feb 2016: revised data cleanup
-# removed data prep and cleanup - see extra script 'EGVU_migration_data_prep2016.r'
-# update 7 Feb 2016: manually identified spring migration events
-# update 7 Feb 2016: collated all migration data and ran tripGrid to identify migration hotspots
-# update 8 Feb 2016: added home range estimation, revised autumn migration definition for juveniles
-# update 9 Feb 2016: added manual autumn migration definition for immature birds, removed home range estimation (now in EGVU_home_range_estimation.R), added time discretisation and philopatry analysis
-# update 10 February: moved migration hotspot analysis into different script (EGVU_migration_hotspot_analysis.R)
-# update 10 Feb 2016: changed season dates for spring to include lazaros (who died 1st of April)
-# update 17 May 2016: included data from spring 2016
-# update 17 June 2016: refine end_date of Dobromir and Sanie, delete Iliaz migrations 2015 (reached only north of Egypt)
-# update 29 June 2016: calculation of nest_dist to define the end of the spring migration 
-# update 13 July 2016: comparison of migration parameters between spring and autumn with linear regression moved in another script 'EGVU_migration_parameters_comparison.R'
+# re-written on 9 February 2019 to include Evan Buechley's NSD model approach
 ##########################################################################
 
 # Load necessary library
@@ -232,4 +220,34 @@ dim(all_migdata)
 mig_summary
 fwrite(mig_summary,"EGVU_migration_start_end_dates.csv")
 fwrite(all_migdata,"EGVU_migration_hourly_data.csv")
+
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# COMPARE MANUAL AND AUTOMATED DATE DEFINITION 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+library(readxl)
+
+# Set working directory
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_prep\\EGVU_papers\\FrontiersMigrationPaper\\EGVUmigration")
+
+# read in results tables
+autodates<- fread("EGVU_migration_start_end_dates.csv")
+manudates<- read_xlsx("EV Migration summary.xlsx", sheet="complete migrations", skip=1)
+head(autodates)
+head(manudates)
+manudates <- manudates %>% dplyr::select(group,begin__3,end__3) %>%
+  #mutate(start_mig_EXP=dmy(begin__3), end_mig_EXP=dmy(begin__3)) %>%
+  rename(id.yr.season=group,start_mig_EXP=begin__3, end_mig_EXP=end__3) %>%
+  #dplyr::select(id.yr.season,start_mig_EXP,end_mig_EXP) %>%
+  filter(start_mig_EXP>ymd("1990-01-01"))
+
+compare<-merge(manudates, autodates,by="id.yr.season", all.x=T) %>%
+  mutate(START_DIFF=as.numeric(difftime(start_mig_EXP,start_mig,units='days')),END_DIFF=as.numeric(difftime(end_mig_EXP,end_mig,units='days')))
+head(compare)
+
+
+fwrite(compare,"EGVU_migration_date_comparison.csv")
 
