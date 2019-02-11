@@ -5,6 +5,9 @@
 # re-written on 9 February 2019 to include Evan Buechley's NSD model approach
 ##########################################################################
 
+## updated 10 Feb to include date comparison with manually annotated tracks
+## updated 11 Feb to add more refined methods from migrateR package for start location and refine p.Est
+
 # Load necessary library
 library(maptools)
 library(sp)
@@ -96,6 +99,14 @@ mig_summary<-migration %>% mutate(count=1) %>%
 # CALCULATE START AND END DATES OF AUTUMN MIGRATION FOR INDIVIDUAL ANIMALS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+### MASSIVE SENSITIVITY OF DATES TO SPECIFIED PERCENTAGE OF MIGRATION< HENCE WE LOOP OVER SOLUTIONS
+propMig<-c(0.05,0.025,0.01,0.005,0.0025,0.001)
+
+
+for (m in propMig){
+
+
+
 ### LOOP TO CALCULATE START AND END DATES FOR AUTUMN MIGRATION #######
 ### based on Evan's script to use models, but if model fails we use basic rules of thumb
 ### output is written as dates into a summary table and migration data are collated in a data.frame
@@ -118,14 +129,33 @@ for (a in migs){
   
   ### create LTRAJ object to fit movement model
   d2 <- as.ltraj(xy = x[, c("utm.e", "utm.n")], date = x$DateTime, id=a)
-  try(d3 <- mvmtClass(d2),silent=T)
-  migr.dates <-  mvmt2dt(d3, p = 0.01, mod = "disperser")      ## replaced 0.05 with 0.01 as it includes most of the migration
-
+  
+  ### identify the start locations rather than just using the first point
+  try(rlocs<- findrloc(d2), silent=T)
+  
+  ### fit the classification model with or without an optimal number of starting points
+  if(rlocs %in% ls()){
+    try(d3 <- mvmtClass(d2, rloc=rlocs$rloc),silent=T)
+  }else{
+    try(d3 <- mvmtClass(d2),silent=T)
+  }
+  
+  ### refine the classification model given that we know delta should be >500 km
+  informPrior<-pEst(l.d=250000)   ## poor documentation of function - no idea in what unit this is required!
+  d4<-refine(d3,p.est=informPrior)
+  
+  ### extract start and end dates
+  if(d4 %in% ls()){migr.dates <-  mvmt2dt(d4, p = m, mod = "disperser")      ## replaced 0.05 with 0.01 as it includes most of the migration ## DATES ARE EXTREMELY SENSITIVE TO THIS!!
+  }else{
+    migr.dates <-  mvmt2dt(d4, p = m, mod = "disperser")      ## replaced 0.05 with 0.01 as it includes most of the migration ## DATES ARE EXTREMELY SENSITIVE TO THIS!!
+  }
+  
   ### write output in summary if models converge and produce output
   if(is.null(migr.dates[[1]])==FALSE){
     mig_summary$start_mig[mig_summary$id.yr.season==a]<- migr.dates[[1]]$date[1]
     mig_summary$end_mig[mig_summary$id.yr.season==a]<- migr.dates[[1]]$date[2]
   }
+  rm(d4,rlocs)
   
 
   ## ALTERNATIVE DEFINITION WITH SIMPLE THRESHOLDS - MIGRATION STARTS WHEN DIST TO HOME CONTINUOUSLY INCREASES
@@ -209,6 +239,10 @@ for (a in migs){
 }		#closes the animal loop
 
 
+fwrite(mig_summary,sprintf("EGVU_migration_start_end_dates_propMig%s.csv",m))
+fwrite(all_migdata,sprintf("EGVU_migration_hourly_data%s.csv",m))
+
+} ### close loop over different thresholds of migration proportion
 
 
 
