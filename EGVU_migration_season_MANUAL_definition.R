@@ -28,6 +28,23 @@ library(readxl)
 library(plotly)
 
 
+### DEFINE FUNCTIONS TO MANUALLY ENTER DATES ###
+
+readStartDate <- function(){
+   no <- readline(prompt="Is the suggested START date correct? (y/n)")
+   if(no=='n'){
+       start <- ymd(readline(prompt="Enter correct start date as YYYY-mm-dd"))
+      }
+}
+readEndDate <- function(){
+  no <- readline(prompt="Is the suggested END date correct? (y/n)")
+  if(no=='n'){
+    start <- ymd(readline(prompt="Enter correct end date as YYYY-mm-dd"))
+  }
+}
+
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOAD PREVIOUSLY SAVED DATA (prepared in script 2.EV-all-migration delineation.R)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,7 +91,7 @@ migs<-migs[!migs %in% c("Cabuk_2016_spring")]
 #   
 # }
 # 
-fwrite(migration,"EGVU_migration_preformatted.csv")
+#fwrite(migration,"EGVU_migration_preformatted.csv")
 
 
 
@@ -124,6 +141,12 @@ migration<-migration[!(migration$id.yr.season=="A89731_2013_fall"),]
 migration<-migration[!(migration$id.yr.season=="Pyrenees_2016_fall"),]
 migration<-migration[!(migration$id.yr.season=="A89731_2012_fall"),]
 migration<-migration[!(migration$id.yr.season=="Ardahan_2014_fall"),]
+
+
+migration<-migration[!(migration$id.yr.season=="95R_2017_spring"),]
+migration<-migration[!(migration$id.yr.season=="2HN_2016_spring"),]
+migration<-migration[!(migration$id.yr.season=="2HN_2016_fall"),]
+
 
 migsDATA<-unique(migration$id.yr.season) ## specify all the unique migration journeys
 
@@ -189,16 +212,23 @@ NEEDEDmigs
 
 #mig_dates<-data.frame()		### create blank data frame that will hold all the data to evaluate accuracy of algorithmic start and end definition
 mig_dates<-fread("EGVU_migration_dates_manually_classified_PART2.csv")
-
-
+mig_dates$start<-ymd(mig_dates$start)
+mig_dates$end<-ymd(mig_dates$end)
 
 NEEDEDmigs<-NEEDEDmigs[!(NEEDEDmigs %in% mig_dates$id.yr.season)]
 
 for (a in NEEDEDmigs){
   
+  
+  
   ### SELECT THE DATA FOR THIS ANIMAL
   x<-migration %>% filter(id.yr.season==a) %>% mutate(Day=as.Date(DateTime))
   
+  if (dim(x)[1] <20 | max(x$home_dist)<500) {
+    print(sprintf("%s is not a proper migratory journey",a))
+  } else {
+  
+    print(sprintf("starting with migration journey %s",a))
   
   ### ~~~~~~~~~ 1. DEFINE START AND END DATES WITH SIMPLE THRESHOLDS ~~~~~~~~~~~~~~~~ ###
   ## MIGRATION STARTS WHEN DIST TO HOME CONTINUOUSLY INCREASES
@@ -235,11 +265,7 @@ for (a in NEEDEDmigs){
   }  # end loop over every day in the data set
   
   
-  ### CAPTURE OUTPUT FOR CALIBRATION 
-  THRESH_calib<-data.frame('id.yr.season'=a, 'start'=THRESH_start,'end'=THRESH_end)
 
- 
- 
   
   ### ~~~~~~~~~ 2. SHOW THE INTERACTIVE GRAPH OF DISTANCE TO SELECT APPROPRIATE DATES ~~~~~~~~~~~~~~~~ ###
   ## visually assess whether the threshold dates make sense
@@ -276,13 +302,26 @@ for (a in NEEDEDmigs){
     
   ### ~~~~~~~~~ 4. FILL IN START AND END DATE MANUALLY ~~~~~~~~~~~~~~~~ ###
   ## only need to adjust the dates that are wrong
-    fix(THRESH_calib)
-    dev.off()
-    rm(THRESH_end,THRESH_start,x,xmig,xlim,ylim,mig_time,distgraph)
+    #fix(THRESH_calib)
+  
+  StartDate <- readStartDate()
+  EndDate <- readEndDate()
+  
+  ### CAPTURE OUTPUT FOR CALIBRATION 
+  THRESH_calib<-data.frame('id.yr.season'=a) %>%
+    mutate(start=if_else(is.null(StartDate),THRESH_start,StartDate)) %>%
+    mutate(end=if_else(is.null(EndDate),THRESH_end,EndDate))
+  
+  
+  ### ~~~~~~~~~ 5. SAVE DATA AND CLEAN UP ~~~~~~~~~~~~~~~~ ###
     mig_dates<-rbind(mig_dates,THRESH_calib)
     fwrite(mig_dates,"EGVU_migration_dates_manually_classified_PART2.csv")
+    dev.off()
+    rm(THRESH_end,THRESH_start,x,xmig,xlim,ylim,mig_time,distgraph,THRESH_calib)
     
-}		#closes the animal loop
+    print(sprintf("finished with migration journey %s",a))
+    
+}}		#closes the else loop for migrations and the animal loop
 
 
 
