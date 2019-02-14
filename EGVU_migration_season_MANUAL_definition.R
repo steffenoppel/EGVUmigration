@@ -11,18 +11,14 @@
 # Load necessary library
 library(maptools)
 library(sp)
-library(rgdal)
 require(maps)
 require(mapdata)
 require(geosphere)
-library(adehabitatLT)
-library(nlme)
 library(lubridate)
 library(ggplot2)
 basemap <- map_data("world")
 library(scales)
 library(tidyverse)
-library(migrateR)
 library(data.table)
 library(readxl)
 library(plotly)
@@ -52,12 +48,12 @@ readEndDate <- function(){
 # Set working directory
 setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_prep\\EGVU_papers\\FrontiersMigrationPaper\\EGVUmigration")
 
-# read in clean csv
-locs = read.csv("EV-all_1ptperhr-filtered-utm-NSD-season.csv")
-head(locs)
-
-migs<-unique(locs$id.yr.season) ## specify the unique migration journeys
-migs<-migs[!migs %in% c("Cabuk_2016_spring")]
+# # read in clean csv
+# locs = read.csv("EV-all_1ptperhr-filtered-utm-NSD-season.csv")
+# head(locs)
+# 
+# migs<-unique(locs$id.yr.season) ## specify the unique migration journeys
+# migs<-migs[!migs %in% c("Cabuk_2016_spring")]
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -141,14 +137,25 @@ migration<-migration[!(migration$id.yr.season=="A89731_2013_fall"),]
 migration<-migration[!(migration$id.yr.season=="Pyrenees_2016_fall"),]
 migration<-migration[!(migration$id.yr.season=="A89731_2012_fall"),]
 migration<-migration[!(migration$id.yr.season=="Ardahan_2014_fall"),]
-
-
 migration<-migration[!(migration$id.yr.season=="95R_2017_spring"),]
 migration<-migration[!(migration$id.yr.season=="2HN_2016_spring"),]
 migration<-migration[!(migration$id.yr.season=="2HN_2016_fall"),]
+migration<-migration[!(migration$id.yr.season=="95R_2017_fall"),]
 
 
+
+## remove other data sets that are marginal ##
 migsDATA<-unique(migration$id.yr.season) ## specify all the unique migration journeys
+dim(migration)
+for (a in migsDATA){
+  x<-migration %>% filter(id.yr.season==a) %>% mutate(Day=as.Date(DateTime))
+  if (dim(x)[1] <20 | max(x$home_dist)<500) {
+  print(sprintf("%s is not a proper migratory journey",a))
+  migration<-migration %>% filter(id.yr.season != a)
+  } 
+}
+dim(migration)
+migsDATA<-unique(migration$id.yr.season) ## specify all the unique migration journeys that have passed the basic filter
 
 
 # read in results tables
@@ -158,7 +165,6 @@ head(manudates)
 
 
 ### MANUAL ANNNOTATION FROM CLEMENTINE BOUGAIN's THESIS ####
-
 manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2014_spring"]<-ymd("2014-06-03")
 manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2015_spring"]<-ymd("2015-04-30")
 manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2015_spring"]<-ymd("2015-05-15")
@@ -189,11 +195,12 @@ fwrite(manudates,"EGVU_migration_dates_manually_classified.csv")
 
 NEEDEDdates<- manudates %>% filter(is.na(start_mig_MANU))
 dim(manudates)
-
 migsCALIB<-unique(manudates$id.yr.season[!is.na(manudates$start_mig_MANU)]) ## those are the already manually annotated journeys
 
 NEEDEDmigs<-migsDATA[!(migsDATA %in% migsCALIB)]  ## those are the migration journeys that still need to be manually annotated
 NEEDEDmigs
+
+
 
 
 
@@ -205,128 +212,187 @@ NEEDEDmigs
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-### LOOP TO CALCULATE START AND END DATES FOR AUTUMN MIGRATION #######
-### COMPARE WITH MANUALLY ANNOTATED DATES AND CALCULATE DIFFERENCE
-### based on Evan's script to use models, but if model fails we use basic rules of thumb
+### THIS INTERACTIVE CODE DOES NOT RUN IN A LOOP!!
+### IT REQUIRES MANUAL INCREMENTS TO GO THROUGH EACH MIGRATORY JOURNEY
 
 
 #mig_dates<-data.frame()		### create blank data frame that will hold all the data to evaluate accuracy of algorithmic start and end definition
 mig_dates<-fread("EGVU_migration_dates_manually_classified_PART2.csv")
 mig_dates$start<-ymd(mig_dates$start)
 mig_dates$end<-ymd(mig_dates$end)
-
 NEEDEDmigs<-NEEDEDmigs[!(NEEDEDmigs %in% mig_dates$id.yr.season)]
+counter=1
 
-for (a in NEEDEDmigs){
-  
-  
-  
-  ### SELECT THE DATA FOR THIS ANIMAL
-  x<-migration %>% filter(id.yr.season==a) %>% mutate(Day=as.Date(DateTime))
-  
-  if (dim(x)[1] <20 | max(x$home_dist)<500) {
-    print(sprintf("%s is not a proper migratory journey",a))
-  } else {
-  
-    print(sprintf("starting with migration journey %s",a))
-  
-  ### ~~~~~~~~~ 1. DEFINE START AND END DATES WITH SIMPLE THRESHOLDS ~~~~~~~~~~~~~~~~ ###
-  ## MIGRATION STARTS WHEN DIST TO HOME CONTINUOUSLY INCREASES
-  
-  dailyhomedist<- x  %>% group_by(Day) %>%
-    summarise(away=max(home_dist))
-  
-  ### find the first day where home_dist is greater than on any day before, and where home_dist is greater on any day afterwards
-  THRESH_start<-NA
-  for (d in 2:(dim(dailyhomedist)[1]-1)){
-    maxbef<-max(dailyhomedist$away[1:(d-1)])
-    minaft<-min(dailyhomedist$away[(d+1):dim(dailyhomedist)[1]])
-    dmax<-d
-    if(is.na(THRESH_start)==TRUE) {     ## prevent that the first day gets overwritten by subsequent days
-      if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]<minaft){THRESH_start<-dailyhomedist$Day[d]} 
-    }
-    if(is.na(THRESH_start)==FALSE) break
-  }  # end loop over every day in the data set
-  
-  
-  ### going backwards, find the first day where home_dist is smaller than on any day afterwards, and where home_dist is smaller on any day before
-  THRESH_end<-NA
-  for (d in (dim(dailyhomedist)[1]):dmax){
-    maxbef<-max(dailyhomedist$away[dmax:(d-1)])
-    minaft<-min(dailyhomedist$away[(d):dim(dailyhomedist)[1]])
-    if(is.na(THRESH_end)==TRUE) {     ## prevent that the first day gets overwritten by subsequent days
-      if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]<=minaft){THRESH_end<-dailyhomedist$Day[d]} 
-    }
-    
-    # if(is.na(start)==FALSE & is.na(end)==TRUE) {     ## prevent that the end is defined before the start
-    #   if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]>=minaft){end<-dailyhomedist$Day[d]}
-    # }
-    if(is.na(THRESH_end)==FALSE) break
-  }  # end loop over every day in the data set
-  
-  
 
-  
-  ### ~~~~~~~~~ 2. SHOW THE INTERACTIVE GRAPH OF DISTANCE TO SELECT APPROPRIATE DATES ~~~~~~~~~~~~~~~~ ###
-  ## visually assess whether the threshold dates make sense
-  
-  mig_time<-interval(start=THRESH_start,end=THRESH_end)
-  x<- x %>% mutate(MIG=if_else(Day %within% mig_time,"migrating","stationary")) %>%
-    mutate(MIG=if_else(is.na(MIG),"stationary",MIG))
-  
-  
-  distgraph<-ggplot(x) + geom_point(aes(x=DateTime, y=home_dist, col=MIG))
-  ggplotly(distgraph)
 
-  
-  
-  ### ~~~~~~~~~ 3. SHOW A MAP WITH MIGRATION LOCATIONS ~~~~~~~~~~~~~~~~ ###
-  ## geographically assess whether the threshold dates make sense
-  
-  xmig<- x %>% filter(MIG=="migrating")
-  xlim<-c(min(xmig$long)-3,max(xmig$long)+3)
-  ylim<-c(min(xmig$lat)-3,max(xmig$lat)+3)
-  
-  if(dim(xmig)[1]>5){  
-  ggplot() + geom_polygon(data = basemap, aes(x=long, y = lat, group = group)) + 
-    coord_fixed(xlim = xlim,  ylim = ylim, ratio = 1.3)+
-    geom_path(data=x, aes(x=long, y=lat))+
-    geom_point(data=xmig, aes(x=long, y=lat),col='darkred',size=1.2)
-  }else{
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# MANUALLY REPEAT THE CODE FROM THIS LINE ONWARDS
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+counter=counter+1
+
+a=NEEDEDmigs[counter]  
+source("manual_threshold_function.R")
+
+### ~~~~~~~~~ 2. SHOW THE INTERACTIVE GRAPH OF DISTANCE TO SELECT APPROPRIATE DATES ~~~~~~~~~~~~~~~~ ###
+## visually assess whether the threshold dates make sense
+
+distgraph<-ggplot(x) + geom_point(aes(x=DateTime, y=home_dist, col=MIG))
+ggplotly(distgraph)
+
+### ~~~~~~~~~ 3. SHOW A MAP WITH MIGRATION LOCATIONS ~~~~~~~~~~~~~~~~ ###
+## geographically assess whether the threshold dates make sense
+
+if(dim(xmig)[1]>5){  
     ggplot() + geom_polygon(data = basemap, aes(x=long, y = lat, group = group)) + 
-      coord_fixed(xlim = c(min(x$long)-3,max(x$long)+3),  ylim = c(min(x$lat)-3,max(x$lat)+3), ratio = 1.3)+
-      geom_path(data=x, aes(x=long, y=lat))
-  }
-  
+      coord_fixed(xlim = xlim,  ylim = ylim, ratio = 1.3)+
+      geom_path(data=x, aes(x=long, y=lat))+
+      geom_point(data=xmig, aes(x=long, y=lat),col='darkred',size=1.2)
+    }else{
+      ggplot() + geom_polygon(data = basemap, aes(x=long, y = lat, group = group)) + 
+        coord_fixed(xlim = c(min(x$long)-3,max(x$long)+3),  ylim = c(min(x$lat)-6,max(x$lat)+6), ratio = 1.3)+
+        geom_path(data=x, aes(x=long, y=lat))
+      }
+
+### ~~~~~~~~~ 4. FILL IN START AND END DATE MANUALLY ~~~~~~~~~~~~~~~~ ###
+source('C:/STEFFEN/MANUSCRIPTS/in_prep/EGVU_papers/FrontiersMigrationPaper/EGVUmigration/manual_annotation_function.R')
+
+
+
+
+
     
     
-  ### ~~~~~~~~~ 4. FILL IN START AND END DATE MANUALLY ~~~~~~~~~~~~~~~~ ###
-  ## only need to adjust the dates that are wrong
-    #fix(THRESH_calib)
-  
-  StartDate <- readStartDate()
-  EndDate <- readEndDate()
-  
-  ### CAPTURE OUTPUT FOR CALIBRATION 
-  THRESH_calib<-data.frame('id.yr.season'=a) %>%
-    mutate(start=if_else(is.null(StartDate),THRESH_start,StartDate)) %>%
-    mutate(end=if_else(is.null(EndDate),THRESH_end,EndDate))
-  
-  
-  ### ~~~~~~~~~ 5. SAVE DATA AND CLEAN UP ~~~~~~~~~~~~~~~~ ###
-    mig_dates<-rbind(mig_dates,THRESH_calib)
-    fwrite(mig_dates,"EGVU_migration_dates_manually_classified_PART2.csv")
-    dev.off()
-    rm(THRESH_end,THRESH_start,x,xmig,xlim,ylim,mig_time,distgraph,THRESH_calib)
     
-    print(sprintf("finished with migration journey %s",a))
+### THIS BELOW DID NOT WORK #################################################
     
-}}		#closes the else loop for migrations and the animal loop
-
-
-
-
-
-
-
-
+    # 
+    # 
+    # 
+    # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # # MANUALLY ANNOTATE START AND END DATES OF MIGRATION FOR INDIVIDUAL ANIMALS
+    # #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 
+    # 
+    # ### LOOP TO CALCULATE START AND END DATES FOR AUTUMN MIGRATION #######
+    # ### COMPARE WITH MANUALLY ANNOTATED DATES AND CALCULATE DIFFERENCE
+    # ### based on Evan's script to use models, but if model fails we use basic rules of thumb
+    # 
+    # 
+    # #mig_dates<-data.frame()		### create blank data frame that will hold all the data to evaluate accuracy of algorithmic start and end definition
+    # mig_dates<-fread("EGVU_migration_dates_manually_classified_PART2.csv")
+    # mig_dates$start<-ymd(mig_dates$start)
+    # mig_dates$end<-ymd(mig_dates$end)
+    # 
+    # NEEDEDmigs<-NEEDEDmigs[!(NEEDEDmigs %in% mig_dates$id.yr.season)]
+    # 
+    # for (a in NEEDEDmigs){
+    #   
+    #   
+    #   
+    #   ### SELECT THE DATA FOR THIS ANIMAL
+    #   x<-migration %>% filter(id.yr.season==a) %>% mutate(Day=as.Date(DateTime))
+    #   
+    #   if (dim(x)[1] <20 | max(x$home_dist)<500) {
+    #     print(sprintf("%s is not a proper migratory journey",a))
+    #   } else {
+    #     
+    #     print(sprintf("starting with migration journey %s",a))
+    #     
+    #     ### ~~~~~~~~~ 1. DEFINE START AND END DATES WITH SIMPLE THRESHOLDS ~~~~~~~~~~~~~~~~ ###
+    #     ## MIGRATION STARTS WHEN DIST TO HOME CONTINUOUSLY INCREASES
+    #     
+    #     dailyhomedist<- x  %>% group_by(Day) %>%
+    #       summarise(away=max(home_dist))
+    #     
+    #     ### find the first day where home_dist is greater than on any day before, and where home_dist is greater on any day afterwards
+    #     THRESH_start<-NA
+    #     for (d in 2:(dim(dailyhomedist)[1]-1)){
+    #       maxbef<-max(dailyhomedist$away[1:(d-1)])
+    #       minaft<-min(dailyhomedist$away[(d+1):dim(dailyhomedist)[1]])
+    #       dmax<-d
+    #       if(is.na(THRESH_start)==TRUE) {     ## prevent that the first day gets overwritten by subsequent days
+    #         if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]<minaft){THRESH_start<-dailyhomedist$Day[d]} 
+    #       }
+    #       if(is.na(THRESH_start)==FALSE) break
+    #     }  # end loop over every day in the data set
+    #     
+    #     
+    #     ### going backwards, find the first day where home_dist is smaller than on any day afterwards, and where home_dist is smaller on any day before
+    #     THRESH_end<-NA
+    #     for (d in (dim(dailyhomedist)[1]):dmax){
+    #       maxbef<-max(dailyhomedist$away[dmax:(d-1)])
+    #       minaft<-min(dailyhomedist$away[(d):dim(dailyhomedist)[1]])
+    #       if(is.na(THRESH_end)==TRUE) {     ## prevent that the first day gets overwritten by subsequent days
+    #         if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]<=minaft){THRESH_end<-dailyhomedist$Day[d]} 
+    #       }
+    #       
+    #       # if(is.na(start)==FALSE & is.na(end)==TRUE) {     ## prevent that the end is defined before the start
+    #       #   if(dailyhomedist$away[d]>maxbef & dailyhomedist$away[d]>=minaft){end<-dailyhomedist$Day[d]}
+    #       # }
+    #       if(is.na(THRESH_end)==FALSE) break
+    #     }  # end loop over every day in the data set
+    #     
+    #     
+    #     
+    #     
+    #     ### ~~~~~~~~~ 2. SHOW THE INTERACTIVE GRAPH OF DISTANCE TO SELECT APPROPRIATE DATES ~~~~~~~~~~~~~~~~ ###
+    #     ## visually assess whether the threshold dates make sense
+    #     
+    #     mig_time<-interval(start=THRESH_start,end=THRESH_end)
+    #     x<- x %>% mutate(MIG=if_else(Day %within% mig_time,"migrating","stationary")) %>%
+    #       mutate(MIG=if_else(is.na(MIG),"stationary",MIG))
+    #     
+    #     
+    #     distgraph<-ggplot(x) + geom_point(aes(x=DateTime, y=home_dist, col=MIG))
+    #     ggplotly(distgraph)
+    #     
+    #     
+    #     
+    #     ### ~~~~~~~~~ 3. SHOW A MAP WITH MIGRATION LOCATIONS ~~~~~~~~~~~~~~~~ ###
+    #     ## geographically assess whether the threshold dates make sense
+    #     
+    #     xmig<- x %>% filter(MIG=="migrating")
+    #     xlim<-c(min(xmig$long)-3,max(xmig$long)+3)
+    #     ylim<-c(min(xmig$lat)-3,max(xmig$lat)+3)
+    #     
+    #     if(dim(xmig)[1]>5){  
+    #       ggplot() + geom_polygon(data = basemap, aes(x=long, y = lat, group = group)) + 
+    #         coord_fixed(xlim = xlim,  ylim = ylim, ratio = 1.3)+
+    #         geom_path(data=x, aes(x=long, y=lat))+
+    #         geom_point(data=xmig, aes(x=long, y=lat),col='darkred',size=1.2)
+    #     }else{
+    #       ggplot() + geom_polygon(data = basemap, aes(x=long, y = lat, group = group)) + 
+    #         coord_fixed(xlim = c(min(x$long)-3,max(x$long)+3),  ylim = c(min(x$lat)-3,max(x$lat)+3), ratio = 1.3)+
+    #         geom_path(data=x, aes(x=long, y=lat))
+    #     }
+    #     
+    #     
+    #     
+    #     ### ~~~~~~~~~ 4. FILL IN START AND END DATE MANUALLY ~~~~~~~~~~~~~~~~ ###
+    #     ## only need to adjust the dates that are wrong
+    #     #fix(THRESH_calib)
+    #     
+    #     StartDate <- readStartDate()
+    #     EndDate <- readEndDate()
+    #     
+    #     ### CAPTURE OUTPUT FOR CALIBRATION 
+    #     THRESH_calib<-data.frame('id.yr.season'=a) %>%
+    #       mutate(start=if_else(is.null(StartDate),THRESH_start,StartDate)) %>%
+    #       mutate(end=if_else(is.null(EndDate),THRESH_end,EndDate))
+    #     
+    #     
+    #     ### ~~~~~~~~~ 5. SAVE DATA AND CLEAN UP ~~~~~~~~~~~~~~~~ ###
+    #     mig_dates<-rbind(mig_dates,THRESH_calib)
+    #     fwrite(mig_dates,"EGVU_migration_dates_manually_classified_PART2.csv")
+    #     dev.off()
+    #     rm(THRESH_end,THRESH_start,x,xmig,xlim,ylim,mig_time,distgraph,THRESH_calib)
+    #     pause()
+    #     
+    #     print(sprintf("finished with migration journey %s",a))
+    #     
+    #   }}		#closes the else loop for migrations and the animal loop
+    # 
+    # 
+    # 
+    # 
