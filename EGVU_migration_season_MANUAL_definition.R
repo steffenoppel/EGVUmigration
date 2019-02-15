@@ -149,12 +149,11 @@ migration<-migration[!(migration$id.yr.season=="Iliaz_2013_spring"),]
 migration<-migration[!(migration$id.yr.season=="Iliaz_2013_fall"),]
 migration<-migration[!(migration$id.yr.season=="Iliaz_2014_fall"),]
 migration<-migration[!(migration$id.yr.season=="Levkipos_2013_spring"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="Levkipos_2013_fall"),]
+migration<-migration[!(migration$id.yr.season=="Mille_2014_fall"),]
+migration<-migration[!(migration$id.yr.season=="Sanie_2014_fall"),]
+migration<-migration[!(migration$id.yr.season=="Svetlina_2013_fall"),]
+migration<-migration[!(migration$id.yr.season=="Volen_2013_spring"),]
 
 
 
@@ -206,38 +205,44 @@ migsDATA<-unique(migration$id.yr.season) ## specify all the unique migration jou
 # manudates$start_mig_MANU[manudates$id.yr.season=="Sanie_2015_fall"]<-ymd("2015-07-20")
 # manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2015_fall"]<-ymd("2015-08-22")
 #fwrite(manudates,"EGVU_migration_dates_manually_classified.csv")
-manudates<-fread("EGVU_migration_dates_manually_classified.csv")
-
-### remove journeys that have already annotated dates and are useless for calibration
-
-NEEDEDdates<- manudates %>% filter(is.na(start_mig_MANU))
-dim(manudates)
-migsCALIB<-unique(manudates$id.yr.season[!is.na(manudates$start_mig_MANU)]) ## those are the already manually annotated journeys
-
-NEEDEDmigs<-migsDATA[!(migsDATA %in% migsCALIB)]  ## those are the migration journeys that still need to be manually annotated
-NEEDEDmigs
+#manudates<-fread("EGVU_migration_dates_manually_classified.csv")
 
 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# COMPILE ALL THE DATASETS THAT HAVE ALREADY BEEN MANUALLY ANNOTATED
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART2.csv")%>%
+  mutate(start=ymd(start)) %>%
+  mutate(end=ymd(end)) 
+mig_dates2<-fread("EGVU_migration_dates_manually_classified.csv")%>%
+  mutate(start=as.Date(start_mig_MANU)) %>%
+  mutate(end=as.Date(end_mig_MANU))  %>%
+  dplyr::select(id.yr.season,start,end)
+mig_dates3<-fread("migration.dates.mideast.csv") %>%
+  mutate(start=as.Date(start, format="%m/%d/%y")) %>%
+  mutate(end=as.Date(end, format="%m/%d/%y")) ## opened, modified, and saved in MS Excel in US date format
+
+all_migdates<-rbind(mig_dates1,mig_dates2,mig_dates3)
 
 
 
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# MANUALLY ANNOTATE START AND END DATES OF MIGRATION FOR INDIVIDUAL ANIMALS
+### IDENTIFY THOSE JOURNEYS THAT STILL NEED TO BE ANNOTATED
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NEEDEDdates<- all_migdates %>% filter(is.na(start))
+NEEDEDmigs<-NEEDEDdates$id.yr.season
+NEEDEDmigs<-NEEDEDmigs[NEEDEDmigs %in% migsDATA]
 
 
-### THIS INTERACTIVE CODE DOES NOT RUN IN A LOOP!!
-### IT REQUIRES MANUAL INCREMENTS TO GO THROUGH EACH MIGRATORY JOURNEY
-
-
-#mig_dates<-data.frame()		### create blank data frame that will hold all the data to evaluate accuracy of algorithmic start and end definition
-mig_dates<-fread("EGVU_migration_dates_manually_classified_PART2.csv")
-mig_dates$start<-dmy(mig_dates$start)
-mig_dates$end<-dmy(mig_dates$end)
-NEEDEDmigs<-NEEDEDmigs[!(NEEDEDmigs %in% mig_dates$id.yr.season)]
+mig_dates<-data.frame()		### create blank data frame that will hold all the data to evaluate accuracy of algorithmic start and end definition
+# mig_dates<-fread("EGVU_migration_dates_manually_classified_PART2.csv")
+# mig_dates$start<-ymd(mig_dates$start) ## use dmy if you opened, modified, and saved in MS Excel
+# mig_dates$end<-ymd(mig_dates$end) ## use dmy if you opened, modified, and saved in MS Excel
+# NEEDEDmigs<-NEEDEDmigs[!(NEEDEDmigs %in% mig_dates$id.yr.season)]
 counter=1
 
 
@@ -246,7 +251,11 @@ counter=1
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # MANUALLY REPEAT THE CODE FROM THIS LINE ONWARDS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### THIS INTERACTIVE CODE DOES NOT RUN IN A LOOP!!
+### IT REQUIRES MANUAL INCREMENTS TO GO THROUGH EACH MIGRATORY JOURNEY
+
 counter=counter+1
+
 
 a=NEEDEDmigs[counter]  
 source("manual_threshold_function.R")
@@ -285,44 +294,9 @@ mig_dates<-mig_dates[!mig_dates$id.yr.season==a,]
 
 
 
-migration<-migration[!(migration$id.yr.season=="Anna_2018_fall"),]
-migration<-migration[!(migration$id.yr.season=="BatuecasP_2017_fall"),]
-migration<-migration[!(migration$id.yr.season=="Iliaz_2013_spring"),]
-migration<-migration[!(migration$id.yr.season=="Iliaz_2013_fall"),]
-migration<-migration[!(migration$id.yr.season=="Iliaz_2014_fall"),]
-migration<-migration[!(migration$id.yr.season=="Levkipos_2013_spring"),]
-migration<-migration[!(migration$id.yr.season=="Levkipos_2013_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
-migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
 
 
 
-
-
-
-
-
-StartDate <- readStartDate()
-EndDate <- readEndDate()
-
-### CAPTURE OUTPUT FOR CALIBRATION 
-THRESH_calib<-data.frame('id.yr.season'=a) %>%
-  mutate(start=if_else(is.null(StartDate),THRESH_start,StartDate)) %>%
-  mutate(end=if_else(is.null(EndDate),if_else(is.na(THRESH_end),ymd("1899-01-01"),THRESH_end),EndDate))
-
-
-### ~~~~~~~~~ 5. SAVE DATA AND CLEAN UP ~~~~~~~~~~~~~~~~ ###
-mig_dates<-rbind(mig_dates,THRESH_calib)
-fwrite(mig_dates,"EGVU_migration_dates_manually_classified_PART2.csv")
-rm(THRESH_end,THRESH_start,x,xmig,xlim,ylim,mig_time,distgraph,THRESH_calib)
-
-print(sprintf("finished with migration journey %s",a))
-
-
-    
     
 ### THIS BELOW DID NOT WORK #################################################
     
