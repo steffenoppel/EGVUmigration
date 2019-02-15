@@ -1,7 +1,9 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # MANUAL THRESHOLD FUNCTION
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-x<-migration %>% filter(id.yr.season==a) %>% mutate(Day=as.Date(DateTime))
+x<-migration %>% filter(id.yr.season==a) %>% mutate(Day=as.Date(DateTime)) %>%
+  	mutate(DateTime=ymd_hms(DateTime))
+		
 
   ### ~~~~~~~~~ 1. DEFINE START AND END DATES WITH SIMPLE THRESHOLDS ~~~~~~~~~~~~~~~~ ###
   ## MIGRATION STARTS WHEN DIST TO HOME CONTINUOUSLY INCREASES

@@ -13,7 +13,7 @@
   
   ### ~~~~~~~~~ 5. SAVE DATA AND CLEAN UP ~~~~~~~~~~~~~~~~ ###
     mig_dates<-rbind(mig_dates,THRESH_calib)
-    fwrite(mig_dates,"EGVU_migration_dates_manually_classified_PART2.csv")
+    fwrite(mig_dates,"EGVU_migration_dates_manually_classified_PART3.csv")
     rm(THRESH_end,THRESH_start,x,xmig,xlim,ylim,mig_time,distgraph,THRESH_calib)
     
     print(sprintf("finished with migration journey %s",a))
