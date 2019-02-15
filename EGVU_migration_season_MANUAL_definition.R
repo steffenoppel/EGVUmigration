@@ -219,13 +219,18 @@ mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART2.csv")%>%
 mig_dates2<-fread("EGVU_migration_dates_manually_classified.csv")%>%
   mutate(start=as.Date(start_mig_MANU)) %>%
   mutate(end=as.Date(end_mig_MANU))  %>%
+  filter(!(start_mig_MANU=="")) %>%
   dplyr::select(id.yr.season,start,end)
 mig_dates3<-fread("migration.dates.mideast.csv") %>%
   mutate(start=as.Date(start, format="%m/%d/%y")) %>%
   mutate(end=as.Date(end, format="%m/%d/%y")) ## opened, modified, and saved in MS Excel in US date format
+mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART3.csv")%>%
+  filter(!(id.yr.season %in% mig_dates1$id.yr.season))%>%
+  mutate(start=ymd(start)) %>%
+  mutate(end=ymd(end)) 
 
 all_migdates<-rbind(mig_dates1,mig_dates2,mig_dates3)
-
+fwrite(all_migdates,"EGVU_manually_classified_migration_dates.csv")
 
 
 
@@ -233,16 +238,11 @@ all_migdates<-rbind(mig_dates1,mig_dates2,mig_dates3)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### IDENTIFY THOSE JOURNEYS THAT STILL NEED TO BE ANNOTATED
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-NEEDEDdates<- all_migdates %>% filter(is.na(start))
-NEEDEDmigs<-NEEDEDdates$id.yr.season
-NEEDEDmigs<-NEEDEDmigs[NEEDEDmigs %in% migsDATA]
 
-
-mig_dates<-data.frame()		### create blank data frame that will hold all the data to evaluate accuracy of algorithmic start and end definition
-# mig_dates<-fread("EGVU_migration_dates_manually_classified_PART2.csv")
-# mig_dates$start<-ymd(mig_dates$start) ## use dmy if you opened, modified, and saved in MS Excel
-# mig_dates$end<-ymd(mig_dates$end) ## use dmy if you opened, modified, and saved in MS Excel
-# NEEDEDmigs<-NEEDEDmigs[!(NEEDEDmigs %in% mig_dates$id.yr.season)]
+mig_dates<-fread("EGVU_manually_classified_migration_dates.csv")
+mig_dates$start<-ymd(mig_dates$start) ## use dmy if you opened, modified, and saved in MS Excel
+mig_dates$end<-ymd(mig_dates$end) ## use dmy if you opened, modified, and saved in MS Excel
+NEEDEDmigs<-migsDATA[!(migsDATA %in% mig_dates$id.yr.season)]
 counter=1
 
 
@@ -263,7 +263,7 @@ source("manual_threshold_function.R")
 ### ~~~~~~~~~ 2. SHOW THE INTERACTIVE GRAPH OF DISTANCE TO SELECT APPROPRIATE DATES ~~~~~~~~~~~~~~~~ ###
 ## visually assess whether the threshold dates make sense
 
-distgraph<-ggplot(x) + geom_point(aes(x=DateTime, y=home_dist, col=MIG))
+distgraph<-ggplot(x) + geom_point(aes(x=DateTime, y=home_dist, col=MIG)) + scale_x_datetime(date_breaks="2 weeks", date_labels="%b-%Y")
 ggplotly(distgraph)
 
 ### ~~~~~~~~~ 3. SHOW A MAP WITH MIGRATION LOCATIONS ~~~~~~~~~~~~~~~~ ###
