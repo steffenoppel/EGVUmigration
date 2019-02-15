@@ -157,9 +157,6 @@ migration<-migration[!(migration$id.yr.season=="Volen_2013_spring"),]
 
 
 
-
-
-
 ## remove other data sets that are marginal ##
 migsDATA<-unique(migration$id.yr.season) ## specify all the unique migration journeys
 dim(migration)
@@ -206,32 +203,6 @@ migsDATA<-unique(migration$id.yr.season) ## specify all the unique migration jou
 # manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2015_fall"]<-ymd("2015-08-22")
 #fwrite(manudates,"EGVU_migration_dates_manually_classified.csv")
 #manudates<-fread("EGVU_migration_dates_manually_classified.csv")
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# COMPILE ALL THE DATASETS THAT HAVE ALREADY BEEN MANUALLY ANNOTATED
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART2.csv")%>%
-  mutate(start=ymd(start)) %>%
-  mutate(end=ymd(end)) 
-mig_dates2<-fread("EGVU_migration_dates_manually_classified.csv")%>%
-  mutate(start=as.Date(start_mig_MANU)) %>%
-  mutate(end=as.Date(end_mig_MANU))  %>%
-  filter(!(start_mig_MANU=="")) %>%
-  dplyr::select(id.yr.season,start,end)
-mig_dates3<-fread("migration.dates.mideast.csv") %>%
-  mutate(start=as.Date(start, format="%m/%d/%y")) %>%
-  mutate(end=as.Date(end, format="%m/%d/%y")) ## opened, modified, and saved in MS Excel in US date format
-mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART3.csv")%>%
-  filter(!(id.yr.season %in% mig_dates1$id.yr.season))%>%
-  mutate(start=ymd(start)) %>%
-  mutate(end=ymd(end)) 
-
-all_migdates<-rbind(mig_dates1,mig_dates2,mig_dates3)
-fwrite(all_migdates,"EGVU_manually_classified_migration_dates.csv")
-
 
 
 
@@ -292,6 +263,37 @@ source('C:/STEFFEN/MANUSCRIPTS/in_prep/EGVU_papers/FrontiersMigrationPaper/EGVUm
 mig_dates<-mig_dates[!mig_dates$id.yr.season==a,]
 
 
+
+
+
+
+
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# COMPILE ALL THE DATASETS THAT HAVE ALREADY BEEN MANUALLY ANNOTATED
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART2.csv")%>%
+  mutate(start=ymd(start)) %>%
+  mutate(end=ymd(end)) 
+mig_dates2<-fread("EGVU_migration_dates_manually_classified.csv")%>%
+  mutate(start=as.Date(start_mig_MANU)) %>%
+  mutate(end=as.Date(end_mig_MANU))  %>%
+  filter(!(start_mig_MANU=="")) %>%
+  dplyr::select(id.yr.season,start,end)
+mig_dates3<-fread("migration.dates.mideast.csv") %>%
+  mutate(start=as.Date(start, format="%m/%d/%y")) %>%
+  mutate(end=as.Date(end, format="%m/%d/%y")) ## opened, modified, and saved in MS Excel in US date format
+mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART3.csv")%>%
+  filter(!(id.yr.season %in% mig_dates1$id.yr.season))%>%
+  mutate(start=ymd(start)) %>%
+  mutate(end=ymd(end)) 
+
+all_migdates<-rbind(mig_dates1,mig_dates2,mig_dates3)
+fwrite(all_migdates,"EGVU_manually_classified_migration_dates.csv")
 
 
 
