@@ -141,6 +141,23 @@ migration<-migration[!(migration$id.yr.season=="95R_2017_spring"),]
 migration<-migration[!(migration$id.yr.season=="2HN_2016_spring"),]
 migration<-migration[!(migration$id.yr.season=="2HN_2016_fall"),]
 migration<-migration[!(migration$id.yr.season=="95R_2017_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_spring"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="Anna_2018_fall"),]
+migration<-migration[!(migration$id.yr.season=="BatuecasP_2017_fall"),]
+migration<-migration[!(migration$id.yr.season=="Iliaz_2013_spring"),]
+migration<-migration[!(migration$id.yr.season=="Iliaz_2013_fall"),]
+migration<-migration[!(migration$id.yr.season=="Iliaz_2014_fall"),]
+migration<-migration[!(migration$id.yr.season=="Levkipos_2013_spring"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+
+
+
 
 
 
@@ -158,38 +175,38 @@ dim(migration)
 migsDATA<-unique(migration$id.yr.season) ## specify all the unique migration journeys that have passed the basic filter
 
 
-# read in results tables
-manudates<- read_xlsx("EV_mig_calibration.xlsx", sheet="complete migrations")
-manudates <- manudates %>% rename(id.yr.season=group,season=season,start_mig_MANU=begin, end_mig_MANU=end)
-head(manudates)
-
-
-### MANUAL ANNNOTATION FROM CLEMENTINE BOUGAIN's THESIS ####
-manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2014_spring"]<-ymd("2014-06-03")
-manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2015_spring"]<-ymd("2015-04-30")
-manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2015_spring"]<-ymd("2015-05-15")
-manudates$start_mig_MANU[manudates$id.yr.season=="Sanie_2015_spring"]<-ymd("2015-05-04")
-manudates$end_mig_MANU[manudates$id.yr.season=="Sanie_2015_spring"]<-ymd("2015-06-18")
-manudates$start_mig_MANU[manudates$id.yr.season=="Castor_2015_spring"]<-ymd("2015-03-07")
-manudates$end_mig_MANU[manudates$id.yr.season=="Castor_2015_spring"]<-ymd("2015-04-05")
-manudates$start_mig_MANU[manudates$id.yr.season=="Lazaros_2013_spring"]<-ymd("2013-03-08")
-manudates$end_mig_MANU[manudates$id.yr.season=="Lazaros_2013_spring"]<-ymd("2013-03-31")
-manudates$start_mig_MANU[manudates$id.yr.season=="Iliaz_2016_spring"]<-ymd("2016-03-17")
-manudates$end_mig_MANU[manudates$id.yr.season=="Iliaz_2016_spring"]<-ymd("2016-05-09")
-manudates$start_mig_MANU[manudates$id.yr.season=="Boris_2016_spring"]<-ymd("2016-03-01")
-manudates$end_mig_MANU[manudates$id.yr.season=="Boris_2016_spring"]<-ymd("2016-03-20")
-manudates$start_mig_MANU[manudates$id.yr.season=="Jenny_2016_spring"]<-ymd("2016-03-16")
-manudates$end_mig_MANU[manudates$id.yr.season=="Jenny_2016_spring"]<-ymd("2016-04-16")
-manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2016_spring"]<-ymd("2016-05-01")
-manudates$start_mig_MANU[manudates$id.yr.season=="Sanie_2016_spring"]<-ymd("2016-04-13")
-manudates$start_mig_MANU[manudates$id.yr.season=="Aoos_2016_spring"]<-ymd("2016-03-16")
-manudates$end_mig_MANU[manudates$id.yr.season=="Aoos_2016_spring"]<-ymd("2016-04-18")
-manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2016_spring"]<-ymd("2016-05-30")
-manudates$end_mig_MANU[manudates$id.yr.season=="Sanie_2016_spring"]<-ymd("2016-05-13")
-manudates$start_mig_MANU[manudates$id.yr.season=="Sanie_2015_fall"]<-ymd("2015-07-20")
-manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2015_fall"]<-ymd("2015-08-22")
-fwrite(manudates,"EGVU_migration_dates_manually_classified.csv")
-
+# # read in results tables
+# manudates<- read_xlsx("EV_mig_calibration.xlsx", sheet="complete migrations")
+# manudates <- manudates %>% rename(id.yr.season=group,season=season,start_mig_MANU=begin, end_mig_MANU=end)
+# head(manudates)
+# 
+# 
+# ### MANUAL ANNNOTATION FROM CLEMENTINE BOUGAIN's THESIS ####
+# manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2014_spring"]<-ymd("2014-06-03")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2015_spring"]<-ymd("2015-04-30")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2015_spring"]<-ymd("2015-05-15")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Sanie_2015_spring"]<-ymd("2015-05-04")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Sanie_2015_spring"]<-ymd("2015-06-18")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Castor_2015_spring"]<-ymd("2015-03-07")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Castor_2015_spring"]<-ymd("2015-04-05")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Lazaros_2013_spring"]<-ymd("2013-03-08")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Lazaros_2013_spring"]<-ymd("2013-03-31")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Iliaz_2016_spring"]<-ymd("2016-03-17")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Iliaz_2016_spring"]<-ymd("2016-05-09")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Boris_2016_spring"]<-ymd("2016-03-01")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Boris_2016_spring"]<-ymd("2016-03-20")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Jenny_2016_spring"]<-ymd("2016-03-16")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Jenny_2016_spring"]<-ymd("2016-04-16")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2016_spring"]<-ymd("2016-05-01")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Sanie_2016_spring"]<-ymd("2016-04-13")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Aoos_2016_spring"]<-ymd("2016-03-16")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Aoos_2016_spring"]<-ymd("2016-04-18")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Dobromir_2016_spring"]<-ymd("2016-05-30")
+# manudates$end_mig_MANU[manudates$id.yr.season=="Sanie_2016_spring"]<-ymd("2016-05-13")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Sanie_2015_fall"]<-ymd("2015-07-20")
+# manudates$start_mig_MANU[manudates$id.yr.season=="Dobromir_2015_fall"]<-ymd("2015-08-22")
+#fwrite(manudates,"EGVU_migration_dates_manually_classified.csv")
+manudates<-fread("EGVU_migration_dates_manually_classified.csv")
 
 ### remove journeys that have already annotated dates and are useless for calibration
 
@@ -218,8 +235,8 @@ NEEDEDmigs
 
 #mig_dates<-data.frame()		### create blank data frame that will hold all the data to evaluate accuracy of algorithmic start and end definition
 mig_dates<-fread("EGVU_migration_dates_manually_classified_PART2.csv")
-mig_dates$start<-ymd(mig_dates$start)
-mig_dates$end<-ymd(mig_dates$end)
+mig_dates$start<-dmy(mig_dates$start)
+mig_dates$end<-dmy(mig_dates$end)
 NEEDEDmigs<-NEEDEDmigs[!(NEEDEDmigs %in% mig_dates$id.yr.season)]
 counter=1
 
@@ -261,7 +278,50 @@ source('C:/STEFFEN/MANUSCRIPTS/in_prep/EGVU_papers/FrontiersMigrationPaper/EGVUm
 
 
 
-    
+
+#### IF THERE WAS NO MIGRATION REMOVE THE LINE 
+mig_dates<-mig_dates[!mig_dates$id.yr.season==a,]
+
+
+
+
+migration<-migration[!(migration$id.yr.season=="Anna_2018_fall"),]
+migration<-migration[!(migration$id.yr.season=="BatuecasP_2017_fall"),]
+migration<-migration[!(migration$id.yr.season=="Iliaz_2013_spring"),]
+migration<-migration[!(migration$id.yr.season=="Iliaz_2013_fall"),]
+migration<-migration[!(migration$id.yr.season=="Iliaz_2014_fall"),]
+migration<-migration[!(migration$id.yr.season=="Levkipos_2013_spring"),]
+migration<-migration[!(migration$id.yr.season=="Levkipos_2013_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+migration<-migration[!(migration$id.yr.season=="A75658_2010_fall"),]
+
+
+
+
+
+
+
+
+StartDate <- readStartDate()
+EndDate <- readEndDate()
+
+### CAPTURE OUTPUT FOR CALIBRATION 
+THRESH_calib<-data.frame('id.yr.season'=a) %>%
+  mutate(start=if_else(is.null(StartDate),THRESH_start,StartDate)) %>%
+  mutate(end=if_else(is.null(EndDate),if_else(is.na(THRESH_end),ymd("1899-01-01"),THRESH_end),EndDate))
+
+
+### ~~~~~~~~~ 5. SAVE DATA AND CLEAN UP ~~~~~~~~~~~~~~~~ ###
+mig_dates<-rbind(mig_dates,THRESH_calib)
+fwrite(mig_dates,"EGVU_migration_dates_manually_classified_PART2.csv")
+rm(THRESH_end,THRESH_start,x,xmig,xlim,ylim,mig_time,distgraph,THRESH_calib)
+
+print(sprintf("finished with migration journey %s",a))
+
+
     
     
 ### THIS BELOW DID NOT WORK #################################################

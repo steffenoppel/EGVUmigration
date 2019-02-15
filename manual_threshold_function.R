@@ -45,3 +45,7 @@ mutate(MIG=if_else(is.na(MIG),"stationary",MIG))
 xmig<- x %>% filter(MIG=="migrating")
 xlim<-c(min(x$long)-1,max(x$long)+1)
 ylim<-c(min(x$lat)-1,max(x$lat)+1)
+
+### TO AVOID SUMMARY LATER ON COLLAPSING WE FILL IN NONSENSE VALUES INSTEAD IF NA
+if(is.na(THRESH_start)==TRUE) {THRESH_start<-ymd("1899-01-01")}
+if(is.na(THRESH_end)==TRUE) {THRESH_end<-ymd("1899-01-01")}
