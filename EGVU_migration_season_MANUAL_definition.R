@@ -214,7 +214,7 @@ mig_dates<-fread("EGVU_manually_classified_migration_dates.csv")
 mig_dates$start<-ymd(mig_dates$start) ## use dmy if you opened, modified, and saved in MS Excel
 mig_dates$end<-ymd(mig_dates$end) ## use dmy if you opened, modified, and saved in MS Excel
 NEEDEDmigs<-migsDATA[!(migsDATA %in% mig_dates$id.yr.season)]
-counter=1
+counter=0
 
 
 
@@ -260,15 +260,32 @@ source('C:/STEFFEN/MANUSCRIPTS/in_prep/EGVU_papers/FrontiersMigrationPaper/EGVUm
 
 
 #### IF THERE WAS NO MIGRATION REMOVE THE LINE 
-mig_dates<-mig_dates[!mig_dates$id.yr.season==a,]
+##   mig_dates<-mig_dates[mig_dates$id.yr.season==a,]
 
 
 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# REMOVE ALL THE NON-MIGRATION DATA FROM THE DATASET
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+head(mig_dates)
+head(migration)
+MIG_DATA<-data.frame()
+
+for (a in unique(mig_dates$id.yr.season)){
+  if(year(mig_dates$end[mig_dates$id.yr.season==a])<2000 | is.null(mig_dates$end[mig_dates$id.yr.season==a])  | is.na(mig_dates$end[mig_dates$id.yr.season==a])){
+    mig_window<-interval(mig_dates$start[mig_dates$id.yr.season==a],ymd("2020-01-01"))  ## for those journeys with no end date make sure that all data are used
+  }
+  mig_window<-interval(mig_dates$start[mig_dates$id.yr.season==a],mig_dates$end[mig_dates$id.yr.season==a])
+  x<-migration %>% filter(id.yr.season==a) %>% mutate(Day=as.Date(DateTime)) %>%
+    filter(Day %within% mig_window)
+  
+  MIG_DATA<-rbind(MIG_DATA,x)
+
+}
 
 
-
-
+fwrite(MIG_DATA,"EGVU_manually_selected_migration_data.csv")
 
 
 
@@ -276,31 +293,50 @@ mig_dates<-mig_dates[!mig_dates$id.yr.season==a,]
 # COMPILE ALL THE DATASETS THAT HAVE ALREADY BEEN MANUALLY ANNOTATED
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART2.csv")%>%
-  mutate(start=ymd(start)) %>%
-  mutate(end=ymd(end)) 
-mig_dates2<-fread("EGVU_migration_dates_manually_classified.csv")%>%
-  mutate(start=as.Date(start_mig_MANU)) %>%
-  mutate(end=as.Date(end_mig_MANU))  %>%
-  filter(!(start_mig_MANU=="")) %>%
-  dplyr::select(id.yr.season,start,end)
-mig_dates3<-fread("migration.dates.mideast.csv") %>%
-  mutate(start=as.Date(start, format="%m/%d/%y")) %>%
-  mutate(end=as.Date(end, format="%m/%d/%y")) ## opened, modified, and saved in MS Excel in US date format
-mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART3.csv")%>%
-  filter(!(id.yr.season %in% mig_dates1$id.yr.season))%>%
-  mutate(start=ymd(start)) %>%
-  mutate(end=ymd(end)) 
+# mig_dates1<-fread("EGVU_migration_dates_manually_classified_PART2.csv")%>%
+#   mutate(start=ymd(start)) %>%
+#   mutate(end=ymd(end)) 
+# mig_dates2<-fread("EGVU_migration_dates_manually_classified.csv")%>%
+#   mutate(start=as.Date(start_mig_MANU)) %>%
+#   mutate(end=as.Date(end_mig_MANU))  %>%
+#   filter(!(start_mig_MANU=="")) %>%
+#   dplyr::select(id.yr.season,start,end)
+# mig_dates3<-fread("migration.dates.mideast.csv") %>%
+#   mutate(start=as.Date(start, format="%m/%d/%y")) %>%
+#   mutate(end=as.Date(end, format="%m/%d/%y")) ## opened, modified, and saved in MS Excel in US date format
+# mig_dates4<-fread("EGVU_migration_dates_manually_classified_PART3.csv")%>%
+#   filter(!(id.yr.season %in% mig_dates1$id.yr.season))%>%
+#   mutate(start=ymd(start)) %>%
+#   mutate(end=ymd(end))
+# mig_dates5<-fread("EGVU_migration_dates_manually_classified_PART4.csv")%>%
+#   filter(!(id.yr.season %in% mig_dates1$id.yr.season))%>%
+#   mutate(start=ymd(start)) %>%
+#   mutate(end=ymd(end)) 
+# 
+# all_migdates<-rbind(mig_dates1,mig_dates2,mig_dates3, mig_dates4, mig_dates5) %>% distinct()
+# fwrite(all_migdates,"EGVU_manually_classified_migration_dates.csv")
 
-all_migdates<-rbind(mig_dates1,mig_dates2,mig_dates3)
-fwrite(all_migdates,"EGVU_manually_classified_migration_dates.csv")
 
+### REMOVE DUPLICATES IN MIGRATION DATES TABLE
+dim(mig_dates)
+mig_dates<-mig_dates %>% distinct()
+dim(mig_dates)
+
+fwrite(mig_dates,"EGVU_manually_classified_migration_dates.csv")
+
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ### THIS BELOW DID NOT WORK #################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
 
     
-### THIS BELOW DID NOT WORK #################################################
+
     
     # 
     # 
