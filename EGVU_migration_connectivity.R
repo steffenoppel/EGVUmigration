@@ -3,6 +3,11 @@
 # original script written by Steffen Oppel in JUNE 2019
 ##########################################################################
 
+### ABANDONED 17 JUNE 2019
+### THIS IS ONLY FOR DISCRETE POPULATIONS
+### EGVU DO NOT WINTER IN 'DISCRETE' POPULATIONS, hence difficult to specify a priori
+### cannot use this to quantify connectivity within e.g. the Balkan subpopulation
+
 
 # Load necessary library
 library(lubridate)
@@ -15,7 +20,7 @@ library(sf)
 library(devtools)
 library(ggplot2)
 library(maptools)
-#devtools::install_github("SMBC-NZP/MigConnectivity", build_vignettes = TRUE)
+devtools::install_github("SMBC-NZP/MigConnectivity", build_vignettes = TRUE)
 #library(MigConnectivity)
 source("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\estConnectivity.R")
 source("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\calcConnectivity.R")
