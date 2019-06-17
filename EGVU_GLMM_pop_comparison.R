@@ -5,6 +5,9 @@
 ### originally provided by Pascual Lopez-Lopez
 ### revised 17 June 2019 by Steffen Oppel - removed captive-bred birds
 
+## ADD MODELS FOR SPEED, START AND END DATES!
+## REMOVE MODELS FOR INTENSITY AND TAC AND MSD
+
 # Load necessary libraries
 library(lme4)
 library(lubridate)
@@ -929,6 +932,7 @@ write.csv2(best_models_OK, "best_models_p_value_results.csv")
 
 ## read in results of repeatability analysis
 repeatabilities<-fread("EGVU_repeatability_migration_subpop.csv")
+names(repeatabilities)[1]<-"variable"
 head(repeatabilities)
 
 ## add AICweight to R2_values
@@ -939,8 +943,5 @@ Table3<- best_models_OK %>% rename(variable=dep_var) %>%
   mutate(variable=ifelse(variable=="totaldistkm","direct-line distance",variable)) %>%
   mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
   mutate(variable=ifelse(variable=="durationdays","duration",variable)) %>%
-  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
-  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
-  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
-  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
+  left_join(repeatabilities, by="variable") 
   
