@@ -2,35 +2,59 @@
 # GLMMs analyses Egyptian vulture data 
 #======================================================================================================#
 
+### originally provided by Pascual Lopez-Lopez
+### revised 17 June 2019 by Steffen Oppel - removed captive-bred birds
+
+# Load necessary libraries
+library(lme4)
+library(lubridate)
+library(tidyverse)
+library(data.table)
+filter<-dplyr::filter
+select<-dplyr::select
+library(fitdistrplus)
+library(corrplot)
+library(dplyr)
+library(tibble)
+library(lmerTest)
+library(MuMIn)
+library(ggplot2)
+library(gridExtra)
+require(car)
+library(afex)
+library(piecewiseSEM)
+
+# Set working directory
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\Analysis\\EGVUmigration")
 setwd("E://Documentos//PUBLICACIONES//Articulo migracion alimoches FRONTIERS ECOL EVOL//analysis")
-data<-read.csv2("migration_parameters_completed_migrations_clean.csv",header=TRUE)
+data<-fread("migration_parameters_completed_migrations_clean.csv")
 
-data$year <- as.factor(data$year)
-data$agedeploy <- as.factor(data$agedeploy)
-data$agemigr <- as.factor(data$agemigr)
-
-
-## remove uncomplete migrations
-data_by_migrations <- split.data.frame(data,data$full_migration)
-data_complete_migrations <- as.data.frame(data_by_migrations$y)
-
-## remove Israelian birds
-levels(data_complete_migrations$country)
-data_complete_migrations1 <- data_complete_migrations[data_complete_migrations$country != "Israel", ]
-levels(data_complete_migrations1$country)
-
-## data ready for analyses
-data_ok <- data_complete_migrations1
+# ## remove uncomplete migrations
+# data_by_migrations <- split.data.frame(data,data$full_migration)
+# data_complete_migrations <- as.data.frame(data_by_migrations$y)
+# 
+# ## remove Israelian birds
+# levels(data_complete_migrations$country)
+# data_complete_migrations1 <- data_complete_migrations[data_complete_migrations$country != "Israel", ]
+# levels(data_complete_migrations1$country)
+# 
+# ## data ready for analyses
+# data_ok <- data_complete_migrations1
+data_ok <- data %>% mutate(DateTime=mdy_hm(start)) %>%
+  filter(subpopulation!="Israel") %>%
+  filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya"))) %>% 
+  mutate(year=as.factor(year(DateTime)),agedeploy=as.factor(agedeploy),agemigr=as.factor(agemigr)) %>%
+  mutate(msd=as.numeric(msd),msdkm=as.numeric(msdkm)) 
 levels(data_ok$subpopulation)
 
 
 #==========data exploratory analysis==============
 #===============we can choose which distirbution fits better to our data==========================
 #==============we use fitdistrplus package in R====================================================
-library(fitdistrplus)
+
 
 #========================discrete True if data is discrete (FALSE if it is continuous)================
-
+str(data_ok)
 par(mfrow = c(1, 1))
 # descdist(data$var.dep, discrete = T)
 descdist(data_ok$totaldistkm, discrete = F, boot = 1000)
@@ -145,7 +169,7 @@ plot(fit.lognormal_durationdays)
 #===============================in a second step we will calculate any correlation among our variables if exist===========
 #===============================To this end, we can use some figures as those showing explicitly correlation among covariates====
 #================================we use corrplot, which is based in spearman pairwise correlations=======================
-library(corrplot)
+
 
 M <- data_ok[,c("totaldistkm","cumulativedistkm","straightness","msdkm","intensityuse","sinuosity","tac","durationdays")]
 
@@ -204,17 +228,10 @@ corrplot(cor(M), p.mat = p.mat, method = "color", type = "upper", sig.level = c(
 #==========================================we are ready to fit our models====================================================
 #==========================================GLMMs=====================================
 #================some packages of interest below==========================================================================
-library(lmerTest)
-library(MuMIn)
-library(ggplot2)
-library(gridExtra)
-library(lme4)
-require(car)
-library(afex)
-library(piecewiseSEM)
 
 
-attach(data_ok)
+
+#attach(data_ok)
 names (data_ok)
 
 #### start model fitting (with lme4 package) 
@@ -250,7 +267,7 @@ Anova(model7)
 
 ### multimodel comparison
 model_rank_totaldistkm <- model.sel(model0, model1, model2, model3, model4, model5, model6, model7, rank=AIC)
-model_rank_totaldistkm
+model_rank_totaldistkm$weight[1]
 
 
 #############################
@@ -866,6 +883,8 @@ rm(model0, model1, model2, model3, model4, model5, model6, model7)
 graphics.off()
 
 
+
+
 #======================================================================================
 ## exporting results
 #======================================================================================
@@ -885,8 +904,7 @@ variable <- c("totaldistkm","cumulativedistkm","straightness","msdkm","intensity
 R2_values_OK <- cbind.data.frame(variable,R2_values)
 write.csv2(R2_values_OK, "R2_values_results.csv")
 
-library(dplyr)
-library(tibble)
+
 
 ## best models p_values
 best_models <- rbind.data.frame(best_totaldistkm,best_cumulativedistkm,best_straightness,best_msdkm,best_tac,best_durationdays,
@@ -900,3 +918,29 @@ kk <- best_models_OK %>% rownames_to_column("indep_var")
 ## reordering the table
 best_models_OK <- kk[c("dep_var","indep_var","Chisq", "Df","Pr(>Chisq)")]
 write.csv2(best_models_OK, "best_models_p_value_results.csv")
+
+
+
+
+#======================================================================================
+## SUMMARISE INTO TABLE 3 FOR PAPER
+#======================================================================================
+
+
+## read in results of repeatability analysis
+repeatabilities<-fread("EGVU_repeatability_migration_subpop.csv")
+head(repeatabilities)
+
+## add AICweight to R2_values
+R2_values_OK<-R2_values_OK %>% mutate(wAIC=model_rank$weight[model_rank$weight>0.5])
+
+Table3<- best_models_OK %>% rename(variable=dep_var) %>%
+  left_join(R2_values_OK, by="variable") %>%
+  mutate(variable=ifelse(variable=="totaldistkm","direct-line distance",variable)) %>%
+  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
+  mutate(variable=ifelse(variable=="durationdays","duration",variable)) %>%
+  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
+  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
+  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
+  mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
+  
