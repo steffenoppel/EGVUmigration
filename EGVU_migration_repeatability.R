@@ -1,8 +1,12 @@
 ##########################################################################
 # QUANTIFICATION OF REPEATABILITY FOR MIGRATING EGYPTIAN VULTURES
 # original script written by Steffen Oppel in March 2019
-# based on script developed for MAscension Frigatebirds in 2015
+# based on script developed for Ascension Frigatebirds in 2015
 ##########################################################################
+
+
+### REVISED 17 JUNE 2019 after reviews
+### removed captive-bred individuals from analysis
 
 
 # Load necessary library
@@ -11,6 +15,9 @@ library(rptR)
 library(lubridate)
 library(tidyverse)
 library(data.table)
+filter<-dplyr::filter
+select<-dplyr::select
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -18,14 +25,17 @@ library(data.table)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Set working directory
-setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_prep\\EGVU_papers\\FrontiersMigrationPaper\\EGVUmigration")
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\Analysis\\EGVUmigration")
 
 # read in clean csv
 migs<- fread("migration_parameters_completed_migrations_clean.csv")
+dim(migs)
 migs<- migs %>% mutate(DateTime=mdy_hm(migs$start)) %>%
   #filter(subpopfine!="Israel") %>%
+  filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya"))) %>% 
   mutate(SPEED=cumulativedistkm/(durationdays*24))
 head(migs)
+dim(migs)
 unique(migs$subpopulation)
 
 
