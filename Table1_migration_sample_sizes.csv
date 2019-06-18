@@ -1,0 +1,16 @@
+subpopulation,season,agemigr,n_ind,n_mig
+Balkans,fall,adult,6,17
+Balkans,fall,immature,3,4
+Balkans,fall,juvenile,9,9
+Balkans,spring,adult,6,13
+Balkans,spring,immature,4,6
+Middle_East,fall,adult,8,17
+Middle_East,fall,immature,6,11
+Middle_East,fall,juvenile,4,4
+Middle_East,spring,adult,6,13
+Middle_East,spring,immature,4,6
+West,fall,adult,15,38
+West,fall,immature,3,5
+West,fall,juvenile,11,11
+West,spring,adult,12,29
+West,spring,immature,2,3

@@ -55,17 +55,60 @@ data_ok <- data %>% mutate(DateTime=ymd_hms(start)) %>%
   mutate(totaldistkm=totaldistkm/1000,cumulativedistkm=cumulativedistkm/1000) %>%
   mutate(speed=cumulativedistkm/durationdays) %>%
   full_join(ancdata, by="id.year.season") %>%
-  filter(subpopulation!="Israel") %>%
   filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya","Lomets","Regina","Anna","Zighmund","Panteley","Akaga"))) %>%
-  filter(!(ID %in% c("Macedonia_fall_2011", "Faia_fall_2018", "Camaces_fall_2017", "Arpacai_fall_2012","Ikaros_fall_2012","Asparuh_fall_2013","Berenice_fall_2013",
+  filter(subpopulation!="Israel") %>%
+  filter(!(id.year.season %in% c("Macedonia_fall_2011", "Faia_fall_2018", "Camaces_fall_2017", "Arpacai_fall_2012","Ikaros_fall_2012","Asparuh_fall_2013","Berenice_fall_2013",
                      "Heracles_fall_2013","Ibrahim_fall_2013","Ilina_fall_2013","Katerina_fall_2013","Redcliff_fall_2013","Lazaros_spring_2013","Ardahan_fall_2014","Volen_fall_2014"))) %>%  
   mutate(year=as.factor(year(DateTime)),agedeploy=as.factor(agedeploy),agemigr=as.factor(agemigr)) %>%
-  select(country,subpopulation,route,ID,year,season,full_migration,agedeploy,agemigr,totaldistkm,cumulativedistkm,straightness,durationdays,julian_start,julian_end,speed)
+  select(country,subpopulation,id.year.season,ID,year,season,full_migration,agedeploy,agemigr,totaldistkm,cumulativedistkm,straightness,durationdays,julian_start,julian_end,speed)
   #mutate(msd=as.numeric(msd),msdkm=as.numeric(msdkm)) %>%
 
 levels(data_ok$subpopulation)
 head(data_ok)
 dim(data_ok)
+
+### SAMPLE SIZE
+data_ok %>% group_by(country) %>% summarise (n_ind=length(unique(ID)))
+data_ok %>% group_by(season) %>% summarise (n_ind=length(unique(id.year.season)))
+data_ok %>% group_by(agedeploy) %>% summarise (n_ind=length(unique(ID)))
+data_ok %>% group_by(agemigr) %>% summarise (n_ind=length(unique(id.year.season)))
+
+
+
+########~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~################
+######## SAMPLE SIZES AND TABLE 1 SUMMARIES  ################
+########~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~################
+Table1n<- data_ok %>% select(subpopulation,id.year.season,ID,season,agemigr) %>%
+  mutate(agemigr=ifelse(agemigr==1,"juvenile",ifelse(agemigr==6,"adult","immature"))) %>%
+  group_by(subpopulation,season,agemigr) %>%
+  summarise(n_ind=length(unique(ID)),n_mig=length(unique(id.year.season)))
+
+Table1<- data_ok %>% select(subpopulation,id.year.season,ID,year,season,agemigr,totaldistkm,cumulativedistkm,straightness,durationdays,julian_start,julian_end,speed) %>%
+  mutate(agemigr=ifelse(agemigr==1,"juvenile",ifelse(agemigr==6,"adult","immature"))) %>%
+  gather(key="mig_metric", value="value",-subpopulation,-id.year.season,-ID,-year,-season,-agemigr) %>%
+  group_by(subpopulation,season,agemigr,mig_metric) %>%
+  summarise(mean=mean(value), min=min(value),max=max(value)) %>%
+  mutate(mean=ifelse(mean>10,round(mean,0),ifelse(mean<1,round(mean,3),round(mean,1)))) %>%
+  mutate(min=ifelse(min>10,round(min,0),ifelse(min<1,round(min,3),round(min,1)))) %>%
+  mutate(max=ifelse(max>10,round(max,0),ifelse(max<1,round(max,3),round(max,1)))) %>%
+  
+  ## fix dates
+  mutate(mean=ifelse(mig_metric %in% c("julian_start","julian_end"),format(as.Date(mean, origin=ymd("2018-01-01")),format="%d-%b"),mean)) %>%
+  mutate(min=ifelse(mig_metric %in% c("julian_start","julian_end"),format(as.Date(min, origin=ymd("2018-01-01")),format="%d-%b"),min)) %>%
+  mutate(max=ifelse(mig_metric %in% c("julian_start","julian_end"),format(as.Date(max, origin=ymd("2018-01-01")),format="%d-%b"),max)) %>%
+  
+  ## compile and relabel
+  mutate(out=paste(mean," (",min," - ",max,")",sep="")) %>%
+  mutate(mig_metric=ifelse(mig_metric=="totaldistkm","direct-line distance",mig_metric)) %>%
+  mutate(mig_metric=ifelse(mig_metric=="cumulativedistkm","travel distance",mig_metric)) %>%
+  mutate(mig_metric=ifelse(mig_metric=="durationdays","duration",mig_metric)) %>%
+  select(mig_metric,subpopulation,season,agemigr,out) %>%
+  
+  ## reshape as desired
+  dcast(mig_metric +agemigr ~ subpopulation + season, value.var = "out") 
+
+fwrite(Table1, "Table1_migration_summaries.csv")
+fwrite(Table1n, "Table1_migration_sample_sizes.csv")
 
 
 
