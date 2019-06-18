@@ -4,6 +4,9 @@
 # after John Fieberg course on data visualization and analysis 
 # with  animal movement data from Movebank and the animal movement tools package (amt)
 
+# updated by Steffen Oppel on 18 June 2019 after revising data to exclude captive bred birds
+## COMPARE between original and 1-pt per day data
+
 # Load libraries
 library(knitr)
 library(lubridate)
@@ -23,9 +26,14 @@ ptm<-proc.time()
 
 ###Set working directory
 setwd("E://Documentos//PUBLICACIONES//Articulo migracion alimoches FRONTIERS ECOL EVOL//analysis")
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\Analysis\\EGVUmigration")
 
 ## data upload
-data <- read.csv(file="EGVU_manually_selected_migration_data.csv", header=TRUE, sep=",", dec = ".")
+# SELECT THE ORIGINAL DATASET OR EVAN's new 1pt per day set
+#data <- fread(file="EGVU_manually_selected_migration_data.csv")
+data <- fread(file="EGVU_Final_complete_migrations_only_1ptperday.csv")
+
+
 
 #### Data cleaning
 
@@ -43,6 +51,10 @@ EV.dat<-EV.dat[ind2!=TRUE,]
 
 # Make timestamp a date/time variable
 EV.dat$DateTime <-as.POSIXct(EV.dat$DateTime, format="%Y-%m-%d T%H:%M:%OS", tz="UTC")
+
+
+# REMOVE CAPTIVE BIRDS
+EV.dat<-EV.dat %>% filter(!(id %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya","Lomets","Regina","Anna","Zighmund","Panteley","Akaga")))
 
 # some visual inspection plots 
 plot(EV.dat$utm.e, EV.dat$utm.n)
@@ -281,6 +293,37 @@ summary_EV_migration_parameters$julian_start <- yday(summary_EV_migration_parame
 summary_EV_migration_parameters$julian_end <- yday(summary_EV_migration_parameters$end)
 
 ## export
-write.csv2(summary_EV_migration_parameters, file="summary_EV_migration_parameters.csv", row.names= FALSE)
+#fwrite(summary_EV_migration_parameters, file="summary_EV_migration_parameters_1PTPERDAY.csv")
 
-ptm
+
+
+
+############ COMPARE BETWEEN ORIGINAL AND REDUCED DATA #######################
+# during revision we decided to go for 1 pt per day thinning of data
+# how does that affect travel distance and straightness
+highresdat<-fread("summary_EV_migration_parameters_HIGHRES.csv")
+lowresdat<-fread("summary_EV_migration_parameters_1PTPERDAY.csv")
+
+
+head(lowresdat)
+head(highresdat)
+
+
+
+lowresdat<-lowresdat %>% select(ID,`total distance`,`cumulative distance`,straightness,sinuosity,msd,`time duration (days)`) %>%
+  group_by(ID) %>%
+  gather(key=metric, value=value,-ID) %>%
+  mutate(Res="daily")
+highresdat<-highresdat %>% select(ID,`total distance`,`cumulative distance`,straightness,sinuosity,msd,`time duration (days)`) %>%
+  group_by(ID) %>%
+  gather(key=metric, value=value,-ID) %>%
+  mutate(Res="hourly")
+COMP<-rbind(lowresdat,highresdat) %>%
+  spread(key=Res, value=value)
+
+
+
+### plot correlation ###
+
+ggplot(COMP) + geom_point(aes(x=daily,y=hourly)) +facet_wrap(~metric, scales="free")
+
