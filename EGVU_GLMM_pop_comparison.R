@@ -725,11 +725,14 @@ R2_values_OK<-R2_values_OK %>% mutate(wAIC=model_rank$weight[model_rank$weight>0
 
 Table3<- best_models %>% 
   left_join(R2_values_OK, by="variable") %>%
+  left_join(repeatabilities, by="variable")%>%
   mutate(variable=ifelse(variable=="totaldistkm","direct-line distance",variable)) %>%
   mutate(variable=ifelse(variable=="cumulativedistkm","travel distance",variable)) %>%
   mutate(variable=ifelse(variable=="durationdays","duration",variable)) %>%
-  left_join(repeatabilities, by="variable") 
-  
+  mutate(Repeatability=paste(round(R,3)," (",round(lcl,3)," - ",round(ucl,3),")",sep="")) %>%
+  #mutate(`Fixed effect(s)`=str_replace(parameter, "factor(.*\\)", "")) %>%
+  mutate(`Fixed effect(s)`=gsub("[\\(\\)]", "", regmatches(as.character(parameter), gregexpr("\\(.*?\\)", as.character(parameter)))))%>%
+  select(variable,`Fixed effect(s)`,wAIC,R2_fixed_effects,R2_random_effects,Repeatability)
 
 
 fwrite(Table3, "Table3_model_results.csv")

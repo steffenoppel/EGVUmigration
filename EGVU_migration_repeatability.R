@@ -7,10 +7,12 @@
 
 ### REVISED 17 JUNE 2019 after reviews
 ### removed captive-bred individuals from analysis
+## removed incomplete migrations
+## updated fixed factors to match GLMM results
 
 
 # Load necessary library
-library(RInSp)
+#library(RInSp)
 library(rptR)
 library(lubridate)
 library(tidyverse)
@@ -26,14 +28,38 @@ select<-dplyr::select
 
 # Set working directory
 setwd("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\Analysis\\EGVUmigration")
+ancdata<-fread("migration_parameters_completed_migrations_clean.csv")
+data<-fread("summary_EV_migration_parameters_1PTPERDAY.csv")   ## updated on 18 June to use latest 1-pt-perday dataset provided by Evan
+head(data)
+head(ancdata)
+# ## remove uncomplete migrations
+# data_by_migrations <- split.data.frame(data,data$full_migration)
+# data_complete_migrations <- as.data.frame(data_by_migrations$y)
+# 
+# ## remove Israelian birds
+# levels(data_complete_migrations$country)
+# data_complete_migrations1 <- data_complete_migrations[data_complete_migrations$country != "Israel", ]
+# levels(data_complete_migrations1$country)
+# 
+# ## data ready for analyses
+# data_ok <- data_complete_migrations1
+ancdata<- ancdata %>% select(country,subpopulation,route,ID,year,season,full_migration,agedeploy,agemigr,startlong,startlat,endlat,endlong) %>%
+  mutate(id.year.season=paste(ID,year,season,sep="_")) %>%
+  filter(full_migration=="y")
 
-# read in clean csv
-migs<- fread("migration_parameters_completed_migrations_clean.csv")
-dim(migs)
-migs<- migs %>% mutate(DateTime=mdy_hm(migs$start)) %>%
-  #filter(subpopfine!="Israel") %>%
-  filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya"))) %>% 
-  mutate(SPEED=cumulativedistkm/(durationdays*24))
+migs <- data %>% mutate(DateTime=ymd_hms(start)) %>%
+  rename(id.year.season=ID, totaldistkm=`total distance`, cumulativedistkm=`cumulative distance`,durationdays=`time duration (days)`) %>%
+  mutate(totaldistkm=totaldistkm/1000,cumulativedistkm=cumulativedistkm/1000) %>%
+  mutate(SPEED=cumulativedistkm/durationdays) %>%
+  full_join(ancdata, by="id.year.season") %>%
+  filter(subpopulation!="Israel") %>%
+  filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya","Lomets","Regina","Anna","Zighmund","Panteley","Akaga"))) %>%
+  filter(!(ID %in% c("Macedonia_fall_2011", "Faia_fall_2018", "Camaces_fall_2017", "Arpacai_fall_2012","Ikaros_fall_2012","Asparuh_fall_2013","Berenice_fall_2013",
+                     "Heracles_fall_2013","Ibrahim_fall_2013","Ilina_fall_2013","Katerina_fall_2013","Redcliff_fall_2013","Lazaros_spring_2013","Ardahan_fall_2014","Volen_fall_2014"))) %>%  
+  mutate(year=as.factor(year(DateTime)),agedeploy=as.factor(agedeploy),agemigr=as.factor(agemigr)) %>%
+  select(country,subpopulation,route,ID,year,season,full_migration,agedeploy,agemigr,totaldistkm,cumulativedistkm,straightness,durationdays,julian_start,julian_end,SPEED)
+
+
 head(migs)
 dim(migs)
 unique(migs$subpopulation)
@@ -92,7 +118,7 @@ dev.off()
 totdistREP<-rpt(totaldistkm~(1|subpopulation), grname="subpopulation",data=migs, datatype="Gaussian", npermut=1000, parallel=T, ncores=4)
 
 ## CUMULATIVE DISTANCE ###
-cumdistREP<-rpt(cumulativedistkm~agemigr+season+(1|subpopulation), grname="subpopulation",data=migs, datatype="Gaussian", npermut=1000, parallel=T, ncores=4)
+cumdistREP<-rpt(cumulativedistkm~season+(1|subpopulation), grname="subpopulation",data=migs, datatype="Gaussian", npermut=1000, parallel=T, ncores=4)
 
 ## STRAIGHTNESS ###
 straightREP<-rpt(straightness~season+(1|subpopulation), grname="subpopulation",data=migs, datatype="Gaussian", npermut=1000, parallel=T, ncores=4)
@@ -114,10 +140,10 @@ endREP<-rpt(julian_end~agemigr+season+(1|subpopulation), grname="subpopulation",
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
 ####~~~~~ 			COMBINE OUTPUT 											     ~~~~~~####
 ####~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####
-rep_summary<-data.frame(parameter=c('direct-line distance','travel distance', 'straightness','duration','speed','start date','end date'),
+rep_summary<-data.frame(parameter=c("totaldistkm","cumulativedistkm","durationdays","straightness","start","end","speed"),
                         R=0,se=0,lcl=0,ucl=0,P_lrt=0)
 
-outlist<-list(totdistREP,cumdistREP,straightREP,durREP,speedREP,startREP,endREP)
+outlist<-list(totdistREP,cumdistREP,durREP,straightREP,startREP,endREP,speedREP)
 
 for (l in 1:nrow(rep_summary)){
   xobj<-outlist[[l]]
