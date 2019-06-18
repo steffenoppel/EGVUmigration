@@ -87,7 +87,7 @@ Table1<- data_ok %>% select(subpopulation,id.year.season,ID,year,season,agemigr,
   mutate(agemigr=ifelse(agemigr==1,"juvenile",ifelse(agemigr==6,"adult","immature"))) %>%
   gather(key="mig_metric", value="value",-subpopulation,-id.year.season,-ID,-year,-season,-agemigr) %>%
   group_by(subpopulation,season,agemigr,mig_metric) %>%
-  summarise(mean=mean(value), min=min(value),max=max(value)) %>%
+  summarise(mean=mean(value, na.rm=T), min=min(value, na.rm=T),max=max(value, na.rm=T)) %>%
   mutate(mean=ifelse(mean>10,round(mean,0),ifelse(mean<1,round(mean,3),round(mean,1)))) %>%
   mutate(min=ifelse(min>10,round(min,0),ifelse(min<1,round(min,3),round(min,1)))) %>%
   mutate(max=ifelse(max>10,round(max,0),ifelse(max<1,round(max,3),round(max,1)))) %>%
