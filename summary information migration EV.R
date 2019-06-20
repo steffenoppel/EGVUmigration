@@ -44,7 +44,7 @@ datsupp <- filter(datsupp, id.yr.season== "Lazaros_2013_spring") %>%
 #str(data)
 data<-rbind(data, datsupp) %>% mutate(DateTime=ymd_hms(DateTime))
 filter(data, id.yr.season== "Lazaros_2013_spring") 
-
+fwrite(data,"EGVU_Final_complete_migrations_only_1ptperday.csv")
 
 
 #### Data cleaning
