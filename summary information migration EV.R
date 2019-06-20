@@ -32,6 +32,18 @@ setwd("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\Analysis\\E
 # SELECT THE ORIGINAL DATASET OR EVAN's new 1pt per day set
 #data <- fread(file="EGVU_manually_selected_migration_data.csv")
 data <- fread(file="EGVU_Final_complete_migrations_only_1ptperday.csv")
+head(data)
+filter(data, id.yr.season== "Lazaros_2013_spring") 
+
+### LAZAROS spring 2013 is missing
+datsupp <- fread("EV-all-1ptperday-filtered-utm-NSD-season.csv")
+datsupp <- filter(datsupp, id.yr.season== "Lazaros_2013_spring") %>%
+  mutate(DateTime=date,step_dist=0,home_dist=0,cumul_dist=0,time_diff=0,speed=0) %>%
+  select(V1,id.yr.season,study,tag,id,DateTime,long,lat,NSD,ND,utm.e,utm.n,step_dist,home_dist,cumul_dist,time_diff,speed,Day,date,Year,Month,Hour,id.yr,season)
+#str(datsupp)
+#str(data)
+data<-rbind(data, datsupp) %>% mutate(DateTime=ymd_hms(DateTime))
+filter(data, id.yr.season== "Lazaros_2013_spring") 
 
 
 
@@ -50,7 +62,7 @@ sum(ind2) # no duplicates
 EV.dat<-EV.dat[ind2!=TRUE,]
 
 # Make timestamp a date/time variable
-EV.dat$DateTime <-as.POSIXct(EV.dat$DateTime, format="%Y-%m-%d T%H:%M:%OS", tz="UTC")
+#EV.dat$DateTime <-as.POSIXct(EV.dat$DateTime, format="%Y-%m-%d T%H:%M:%OS", tz="UTC")
 
 
 # REMOVE CAPTIVE BIRDS
@@ -60,7 +72,8 @@ EV.dat<-EV.dat %>% filter(!(id %in% c("Akaga", "Blanka", "Boyana", "Elodie","Pol
 plot(EV.dat$utm.e, EV.dat$utm.n)
 show(EV.dat)
 summary(EV.dat)
-
+filter(EV.dat, id.yr.season== "Lazaros_2013_spring")
+filter(EV.dat, is.na(DateTime))
 
 ## COMPUTATION OF BASIC SUMMARY STATISTICS
 
@@ -293,9 +306,8 @@ summary_EV_migration_parameters$julian_start <- yday(summary_EV_migration_parame
 summary_EV_migration_parameters$julian_end <- yday(summary_EV_migration_parameters$end)
 
 ## export
-#fwrite(summary_EV_migration_parameters, file="summary_EV_migration_parameters_1PTPERDAY.csv")
-
-
+fwrite(summary_EV_migration_parameters, file="summary_EV_migration_parameters_1PTPERDAY.csv")
+filter(summary_EV_migration_parameters, ID== "Lazaros_2013_spring") 
 
 
 ############ COMPARE BETWEEN ORIGINAL AND REDUCED DATA #######################
