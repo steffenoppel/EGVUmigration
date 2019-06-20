@@ -9,6 +9,8 @@
 ## ADD MODELS FOR SPEED, START AND END DATES!
 ## REMOVE MODELS FOR INTENSITY AND TAC AND MSD
 
+### revised 20 June to include Lazaros_2013_spring
+
 # Load necessary libraries
 library(lme4)
 library(lubridate)
@@ -51,14 +53,15 @@ ancdata<- ancdata %>% select(country,subpopulation,route,ID,year,season,full_mig
   filter(full_migration=="y")
 
 data_ok <- data %>% mutate(DateTime=ymd_hms(start)) %>%
+  mutate(DateTime=if_else(is.na(DateTime),ymd_hms(paste(start,"08:00:00",sep=" ")),DateTime)) %>%
   rename(id.year.season=ID, totaldistkm=`total distance`, cumulativedistkm=`cumulative distance`,durationdays=`time duration (days)`) %>%
   mutate(totaldistkm=totaldistkm/1000,cumulativedistkm=cumulativedistkm/1000) %>%
   mutate(speed=cumulativedistkm/durationdays) %>%
   full_join(ancdata, by="id.year.season") %>%
   filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya","Lomets","Regina","Anna","Zighmund","Panteley","Akaga"))) %>%
   filter(subpopulation!="Israel") %>%
-  filter(!(id.year.season %in% c("Macedonia_fall_2011", "Faia_fall_2018", "Camaces_fall_2017", "Arpacai_fall_2012","Ikaros_fall_2012","Asparuh_fall_2013","Berenice_fall_2013",
-                     "Heracles_fall_2013","Ibrahim_fall_2013","Ilina_fall_2013","Katerina_fall_2013","Redcliff_fall_2013","Lazaros_spring_2013","Ardahan_fall_2014","Volen_fall_2014"))) %>%  
+  filter(!(id.year.season %in% c("Macedonia_2011_fall", "Faia_2018_fall", "Camaces_2017_fall", "Arpacai_2012_fall","Ikaros_2012_fall","Asparuh_2013_fall","Berenice_2013_fall",
+                                 "Heracles_2013_fall","Ibrahim_2013_fall","Ilina_2013_fall","Katerina_2013_fall","Redcliff_2013_fall","Ardahan_2014_fall","Volen_2014_fall"))) %>%  
   mutate(year=as.factor(year(DateTime)),agedeploy=as.factor(agedeploy),agemigr=as.factor(agemigr)) %>%
   select(country,subpopulation,id.year.season,ID,year,season,full_migration,agedeploy,agemigr,totaldistkm,cumulativedistkm,straightness,durationdays,julian_start,julian_end,speed)
   #mutate(msd=as.numeric(msd),msdkm=as.numeric(msdkm)) %>%
@@ -66,6 +69,10 @@ data_ok <- data %>% mutate(DateTime=ymd_hms(start)) %>%
 levels(data_ok$subpopulation)
 head(data_ok)
 dim(data_ok)
+
+### ENSURE LAZAROS IS IN THERE ##
+data_ok %>% filter(id.year.season=="Lazaros_2013_spring")
+
 
 ### SAMPLE SIZE
 data_ok %>% group_by(country) %>% summarise (n_ind=length(unique(ID)))
@@ -122,7 +129,7 @@ fwrite(Table1n, "Table1_migration_sample_sizes.csv")
 #==========================================GLMMs=====================================
 #================some packages of interest below==========================================================================
 
-
+subpopulation<-data_ok$subpopulation
 
 #attach(data_ok)
 names (data_ok)
@@ -142,7 +149,7 @@ model1 <- lmer(log(totaldistkm) ~ factor(subpopulation) + (1|year/ID), data = da
 model2 <- lmer(log(totaldistkm) ~ factor(season) + (1|year/ID), data = data_ok)
 # summary(model2)
 # Anova(model2)
-model3 <- glmer(log(totaldistkm) ~ factor(agemigr) + (1|year/ID), data = data_ok)
+model3 <- lmer(log(totaldistkm) ~ factor(agemigr) + (1|year/ID), data = data_ok)
 # summary(model3)
 # Anova(model3)
 model4 <- lmer(log(totaldistkm) ~ factor(subpopulation) + factor(season) + (1|year/ID), data = data_ok)

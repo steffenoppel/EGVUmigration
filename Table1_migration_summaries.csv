@@ -1,22 +1,22 @@
 mig_metric,agemigr,Balkans_fall,Balkans_spring,Middle_East_fall,Middle_East_spring,West_fall,West_spring
-direct-line distance,adult,3303 (2948 - 5093),3702 (3219 - 4981),4150 (3728 - 5062),4021 (3723 - 5041),2730 (2267 - 3368),2819 (2472 - 3333)
+direct-line distance,adult,3303 (2948 - 5093),3547 (3219 - 4981),4150 (3728 - 5062),4021 (3723 - 5041),2730 (2267 - 3368),2819 (2472 - 3333)
 direct-line distance,immature,4056 (3345 - 4584),3757 (3582 - 3936),4012 (3595 - 5452),4177 (3406 - 4910),2793 (2736 - 3030),2871 (2537 - 3029)
 direct-line distance,juvenile,3404 (3237 - 4136),,2824 (2635 - 4058),,3021 (2641 - 3370),
-duration,adult,21 (11 - 65),30 (18 - 36),18 (12 - 61),18 (15 - 67),14 (9 - 26),21 (13 - 33)
+duration,adult,21 (11 - 65),31 (18 - 90),18 (12 - 61),18 (15 - 67),14 (9 - 26),21 (13 - 33)
 duration,immature,48 (35 - 64),46 (15 - 58),19 (12 - 41),28 (21 - 83),20 (15 - 21),16 (13 - 48)
 duration,juvenile,27 (18 - 60),,24 (12 - 56),,34 (14 - 77),
-julian_end,adult,02-Oct (05-Sep - 16-Oct),10-Apr (18-Mar - 01-May),04-Oct (17-Sep - 04-Nov),10-Apr (23-Mar - 30-Apr),22-Sep (15-Aug - 17-Oct),17-Mar (26-Feb - 07-Apr)
+julian_end,adult,02-Oct (05-Sep - 16-Oct),06-Apr (18-Mar - 01-May),04-Oct (17-Sep - 04-Nov),10-Apr (23-Mar - 30-Apr),22-Sep (15-Aug - 17-Oct),17-Mar (26-Feb - 07-Apr)
 julian_end,immature,30-Sep (27-Sep - 19-Oct),02-Jun (11-May - 27-Jun),29-Sep (11-Sep - 30-Oct),12-Jun (11-May - 20-Jun),30-Sep (23-Sep - 14-Oct),19-Apr (02-Apr - 06-May)
 julian_end,juvenile,16-Oct (27-Sep - 13-Nov),,06-Oct (10-Sep - 14-Nov),,09-Oct (17-Sep - 22-Nov),
-julian_start,adult,11-Sep (12-Aug - 26-Sep),08-Mar (28-Feb - 07-Apr),18-Sep (31-Jul - 07-Oct),22-Mar (29-Jan - 15-Apr),08-Sep (20-Jul - 27-Sep),26-Feb (04-Feb - 10-Mar)
+julian_start,adult,11-Sep (12-Aug - 26-Sep),08-Mar (02-Jan - 07-Apr),18-Sep (31-Jul - 07-Oct),22-Mar (29-Jan - 15-Apr),08-Sep (20-Jul - 27-Sep),26-Feb (04-Feb - 10-Mar)
 julian_start,immature,19-Aug (31-Jul - 28-Aug),01-May (19-Mar - 05-May),09-Sep (24-Aug - 07-Oct),18-Apr (16-Mar - 29-May),15-Sep (02-Sep - 23-Sep),20-Mar (19-Mar - 03-Apr)
 julian_start,juvenile,12-Sep (07-Sep - 22-Sep),,09-Sep (29-Aug - 25-Sep),,09-Sep (13-Aug - 09-Oct),
-speed,adult,269 (111 - 407),199 (181 - 286),286 (85 - 384),273 (73 - 327),217 (144 - 321),161 (117 - 242)
+speed,adult,269 (111 - 407),198 (80 - 286),286 (85 - 384),273 (73 - 327),217 (144 - 321),161 (117 - 242)
 speed,immature,138 (121 - 183),176 (133 - 331),241 (129 - 364),190 (78 - 266),155 (147 - 210),217 (118 - 231)
 speed,juvenile,183 (105 - 251),,169 (64 - 249),,113 (61 - 250),
-straightness,adult,0.631 (0.528 - 0.925),0.615 (0.495 - 0.899),0.924 (0.6 - 0.977),0.84 (0.706 - 0.941),0.905 (0.772 - 0.982),0.875 (0.642 - 0.945)
+straightness,adult,0.631 (0.528 - 0.925),0.591 (0.469 - 0.899),0.924 (0.6 - 0.977),0.84 (0.706 - 0.941),0.905 (0.772 - 0.982),0.875 (0.642 - 0.945)
 straightness,immature,0.624 (0.438 - 0.692),0.493 (0.444 - 0.793),0.847 (0.791 - 0.969),0.709 (0.383 - 0.778),0.926 (0.897 - 0.933),0.819 (0.506 - 0.9)
 straightness,juvenile,0.645 (0.528 - 0.819),,0.851 (0.731 - 0.887),,0.79 (0.694 - 0.952),
-travel distance,adult,5404 (4479 - 7213),5864 (4848 - 6530),4611 (4042 - 6217),5177 (4351 - 5553),3097 (2415 - 3779),3265 (2846 - 4657)
+travel distance,adult,5404 (4479 - 7213),5911 (4848 - 7225),4611 (4042 - 6217),5177 (4351 - 5553),3097 (2415 - 3779),3265 (2846 - 4657)
 travel distance,immature,7017 (5649 - 7713),7398 (4964 - 8279),4552 (4064 - 6575),6210 (4606 - 10983),3091 (2995 - 3264),3700 (2820 - 5679)
 travel distance,juvenile,5281 (4147 - 6856),,3604 (2987 - 4675),,3792 (3129 - 4724),
