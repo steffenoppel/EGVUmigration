@@ -36,15 +36,15 @@ head(data)
 filter(data, id.yr.season== "Lazaros_2013_spring") 
 
 ### LAZAROS spring 2013 is missing
-datsupp <- fread("EV-all-1ptperday-filtered-utm-NSD-season.csv")
-datsupp <- filter(datsupp, id.yr.season== "Lazaros_2013_spring") %>%
-  mutate(DateTime=date,step_dist=0,home_dist=0,cumul_dist=0,time_diff=0,speed=0) %>%
-  select(V1,id.yr.season,study,tag,id,DateTime,long,lat,NSD,ND,utm.e,utm.n,step_dist,home_dist,cumul_dist,time_diff,speed,Day,date,Year,Month,Hour,id.yr,season)
-#str(datsupp)
-#str(data)
-data<-rbind(data, datsupp) %>% mutate(DateTime=ymd_hms(DateTime))
-filter(data, id.yr.season== "Lazaros_2013_spring") 
-fwrite(data,"EGVU_Final_complete_migrations_only_1ptperday.csv")
+# datsupp <- fread("EV-all-1ptperday-filtered-utm-NSD-season.csv")
+# datsupp <- filter(datsupp, id.yr.season== "Lazaros_2013_spring") %>%
+#   mutate(DateTime=date,step_dist=0,home_dist=0,cumul_dist=0,time_diff=0,speed=0) %>%
+#   select(V1,id.yr.season,study,tag,id,DateTime,long,lat,NSD,ND,utm.e,utm.n,step_dist,home_dist,cumul_dist,time_diff,speed,Day,date,Year,Month,Hour,id.yr,season)
+# #str(datsupp)
+# #str(data)
+# data<-rbind(data, datsupp) %>% mutate(DateTime=ymd_hms(DateTime))
+d<-filter(data, id.yr.season== "Malysh_2017_fall") 
+#fwrite(data,"EGVU_Final_complete_migrations_only_1ptperday.csv")
 
 
 #### Data cleaning

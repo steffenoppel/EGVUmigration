@@ -1,6 +1,6 @@
 #Set WD
 setwd("~/Google Drive/Egyptian Vulture/Frontiers in Ecology & Evolution Paper/Latest/Data/EVmigration_data")
-setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_prep\\EGVU_papers\\FrontiersMigrationPaper\\EGVUmigration")
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\Submitted\\FrontiersMigrationPaper\\Analysis\\EGVUmigration")
 
 ##Clear workspace
 rm(list = ls())
@@ -344,7 +344,7 @@ write.csv(d, "EV-CompletedMigrations-1ptperday.csv")
 rm(list = ls())
 
 #read in clean csv
-d = read.csv("EV-CompletedMigrations-1ptperday.csv")
+d = read.csv("EGVU_Final_complete_migrations_only_1ptperday.csv")    ### CHANGED ON 21 June 2019 to include latest dataset
 d$date = ymd_hms(d$date)
 summary(d$id.yr.season)
 
@@ -364,6 +364,8 @@ summary(nsds)
 ###################################################
 #Use migrateR package to delineate migration periods
 ###################################################
+library(devtools)
+install_github("dbspitz/migrateR/migrateR", build_vignettes = T)
 require(migrateR)
 require(plyr)
 par(mfrow=c(1,1)) 
@@ -434,7 +436,7 @@ startend = rep(c("start", "end"), times = 193)
 startend
 migr.summary2$startend = startend
 head(migr.summary2)
-write.csv(migr.summary2, "EV-migration-summary-final-1ptperday.csv")
+#write.csv(migr.summary2, "EV-migration-summary-final-1ptperday.csv")
 
 #######################################
 # at this point, there are 2 models that did not fit
@@ -533,7 +535,7 @@ d1 = d[((d$date > d$migr.start.date) & (d$date < d$migr.end.date)),]
 head(d)
 head(d1)
 tail(d1)
-write.csv(d1, "EV-migrations.only-1ptperhour.csv")
+#write.csv(d1, "EV-migrations.only-1ptperhour.csv")
 
 ###########################################################################
 #plot migrations only
@@ -543,7 +545,7 @@ sapply(pcks, require, character = TRUE)
 ##Clear workspace
 rm(list = ls())
 #load the data
-d = read.csv("EV-migrations.only-1ptperday.csv")
+d = read.csv("EGVU_Final_complete_migrations_only_1ptperday.csv")
 head(d)
 d$date <- ymd_hms(d$date)
 class(d$date)
