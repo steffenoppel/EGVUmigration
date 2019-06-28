@@ -11,6 +11,8 @@
 
 ### revised 20 June to include Lazaros_2013_spring
 
+### rerun on 28 June 2019 after including two more migrations
+
 # Load necessary libraries
 library(lme4)
 library(lubridate)
@@ -37,6 +39,8 @@ ancdata<-fread("migration_parameters_completed_migrations_clean.csv")
 data<-fread("summary_EV_migration_parameters_1PTPERDAY.csv")   ## updated on 18 June to use latest 1-pt-perday dataset provided by Evan
 head(data)
 head(ancdata)
+length(unique(data$ID))
+
 # ## remove uncomplete migrations
 # data_by_migrations <- split.data.frame(data,data$full_migration)
 # data_complete_migrations <- as.data.frame(data_by_migrations$y)
@@ -51,6 +55,7 @@ head(ancdata)
 ancdata<- ancdata %>% select(country,subpopulation,route,ID,year,season,full_migration,agedeploy,agemigr,startlong,startlat,endlat,endlong) %>%
   mutate(id.year.season=paste(ID,year,season,sep="_")) %>%
   filter(full_migration=="y")
+length(unique(ancdata$id.year.season))
 
 data_ok <- data %>% mutate(DateTime=ymd_hms(start)) %>%
   mutate(DateTime=if_else(is.na(DateTime),ymd_hms(paste(start,"08:00:00",sep=" ")),DateTime)) %>%
@@ -66,13 +71,17 @@ data_ok <- data %>% mutate(DateTime=ymd_hms(start)) %>%
   select(country,subpopulation,id.year.season,ID,year,season,full_migration,agedeploy,agemigr,totaldistkm,cumulativedistkm,straightness,durationdays,julian_start,julian_end,speed)
   #mutate(msd=as.numeric(msd),msdkm=as.numeric(msdkm)) %>%
 
-levels(data_ok$subpopulation)
+unique(data_ok$subpopulation)
 head(data_ok)
 dim(data_ok)
 
+### FIGURE OUT WHICH OF THE 188 ORIGINALS ARE NOT IN data_ok
+data %>% filter(!(ID %in% data_ok$id.year.season))
+## these are both filtered because 'complete migration' is 'n' 
+
 ### ENSURE LAZAROS IS IN THERE ##
 data_ok %>% filter(id.year.season=="Lazaros_2013_spring")
-
+length(unique(data_ok$id.year.season))
 
 ### SAMPLE SIZE
 data_ok %>% group_by(country) %>% summarise (n_ind=length(unique(ID)))
@@ -735,7 +744,7 @@ model_rank <- rbind.data.frame(model_rank_totaldistkm,model_rank_cumulativedistk
                                model_rank_end,model_rank_speed)
 model_rank$variable <- rep(c("totaldistkm","cumulativedistkm","durationdays","straightness","start","end","speed"), each=8)
 model_rank
-#write.csv2(model_rank, "model_rank_results.csv")
+#fwrite(model_rank, "model_rank_results.csv")
 
 ## marginal R2 (fixed effects) and conditional R2 (attributable to fixed + random effects) 
 R2_values <- rbind.data.frame(R2_totaldistkm,R2_cumulativedistkm,R2_durationdays,R2_straightness,R2_start,R2_end,R2_speed)
@@ -743,7 +752,7 @@ R2_values
 # variable names
 variable <- c("totaldistkm","cumulativedistkm","durationdays","straightness","start","end","speed")
 R2_values_OK <- cbind.data.frame(variable,R2_values)
-write.csv2(R2_values_OK, "R2_values_results.csv")
+fwrite(R2_values_OK, "R2_values_results.csv")
 
 
 
