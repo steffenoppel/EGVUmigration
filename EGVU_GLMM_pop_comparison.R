@@ -13,6 +13,8 @@
 
 ### rerun on 28 June 2019 after including two more migrations
 
+### rerun on 1 July 2019 after excluding the Israel birds
+
 # Load necessary libraries
 library(lme4)
 library(lubridate)
@@ -64,14 +66,14 @@ data_ok <- data %>% mutate(DateTime=ymd_hms(start)) %>%
   mutate(speed=cumulativedistkm/durationdays) %>%
   full_join(ancdata, by="id.year.season") %>%
   filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya","Lomets","Regina","Anna","Zighmund","Panteley","Akaga"))) %>%
-  filter(subpopulation!="Israel") %>%
+  filter(country!="Israel") %>%
   filter(!(id.year.season %in% c("Macedonia_2011_fall", "Faia_2018_fall", "Camaces_2017_fall", "Arpacai_2012_fall","Ikaros_2012_fall","Asparuh_2013_fall","Berenice_2013_fall",
                                  "Heracles_2013_fall","Ibrahim_2013_fall","Ilina_2013_fall","Katerina_2013_fall","Redcliff_2013_fall","Ardahan_2014_fall","Volen_2014_fall"))) %>%  
   mutate(year=as.factor(year(DateTime)),agedeploy=as.factor(agedeploy),agemigr=as.factor(agemigr)) %>%
   select(country,subpopulation,id.year.season,ID,year,season,full_migration,agedeploy,agemigr,totaldistkm,cumulativedistkm,straightness,durationdays,julian_start,julian_end,speed)
   #mutate(msd=as.numeric(msd),msdkm=as.numeric(msdkm)) %>%
 
-unique(data_ok$subpopulation)
+unique(data_ok$country)
 head(data_ok)
 dim(data_ok)
 

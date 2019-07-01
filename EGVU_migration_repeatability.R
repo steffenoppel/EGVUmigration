@@ -55,7 +55,7 @@ migs <- data %>% mutate(DateTime=ymd_hms(start)) %>%
   mutate(totaldistkm=totaldistkm/1000,cumulativedistkm=cumulativedistkm/1000) %>%
   mutate(SPEED=cumulativedistkm/durationdays) %>%
   full_join(ancdata, by="id.year.season") %>%
-  filter(subpopulation!="Israel") %>%
+  filter(country!="Israel") %>%
   filter(!(ID %in% c("Akaga", "Blanka", "Boyana", "Elodie","Polya","Lomets","Regina","Anna","Zighmund","Panteley","Akaga"))) %>%
   filter(!(id.year.season %in% c("Macedonia_2011_fall", "Faia_2018_fall", "Camaces_2017_fall", "Arpacai_2012_fall","Ikaros_2012_fall","Asparuh_2013_fall","Berenice_2013_fall",
                      "Heracles_2013_fall","Ibrahim_2013_fall","Ilina_2013_fall","Katerina_2013_fall","Redcliff_2013_fall","Ardahan_2014_fall","Volen_2014_fall"))) %>%  
@@ -65,7 +65,7 @@ migs <- data %>% mutate(DateTime=ymd_hms(start)) %>%
 
 head(migs)
 dim(migs)
-unique(migs$subpopulation)
+unique(migs$country)
 
 migs %>% filter(id.year.season=="Lazaros_2013_spring")
 ancdata %>% filter(ID=="Lazaros")
